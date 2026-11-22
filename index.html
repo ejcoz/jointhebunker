@@ -132,6 +132,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
         <svg id="door" class="stage" viewBox="0 0 300 400"></svg>
         <iframe id="live" class="stage" title="Your floor" aria-hidden="true" tabindex="-1"></iframe>
         <iframe id="hall" class="stage" title="Your hallway" aria-hidden="true" tabindex="-1"></iframe>
+        <iframe id="front" class="stage" title="Your door" aria-hidden="true" tabindex="-1"></iframe>
         <div class="blk" id="blk"></div>
         <div class="cap" id="cap"></div>
       </div>
@@ -139,7 +140,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
         <button type="button" data-v="silo">Silo</button>
         <button type="button" data-v="floor">Your floor</button>
         <button type="button" data-v="hall">Your bunk</button>
-        <button type="button" data-v="door">Your tag</button>
+        <button type="button" data-v="door">Your door</button>
         <button type="button" data-v="replay">Walk me there again</button>
       </div>
       <div class="finfo" id="finfo" hidden></div>
@@ -421,8 +422,8 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     return d;
   }
   let timers = [], cur = null;
-  const live = $("live"), hall = $("hall"), blk = $("blk");
-  const STAGES = ["silo", "floor", "door", "live", "hall"];
+  const live = $("live"), hall = $("hall"), front = $("front"), blk = $("blk");
+  const STAGES = ["silo", "floor", "door", "live", "hall", "front"];
   let occ = null;                                    // bed -> handle, built on first use
   function occupants() {
     if (occ) return occ; occ = new Map();
@@ -438,6 +439,10 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       setTimeout(() => end(null), 9000);
       frame.src = "/scene/floors.html?" + qs;
     });
+  }
+  function frontQS(c) {
+    const st = c.fno ? "FOUNDER #" + c.fno : c.confirmed ? "CONFIRMED" : "HELD · LOCKED", sk = c.fno ? "f" : c.confirmed ? "c" : "h";
+    return `f=d&w=${HW2}&h=${HH2}&n=${encodeURIComponent(fmt(c.bed))}&u=${encodeURIComponent("@" + (c.handle.length > 26 ? c.handle.slice(0, 25) + "\u2026" : c.handle))}&st=${encodeURIComponent(st)}&sk=${sk}`;
   }
   function floorQS(lvl) { return `f=${lvl.slice(1)}&w=${FW}&h=${FH}`; }
   function hallQS(c) {
@@ -460,11 +465,11 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   function stage(v, opts = {}) {
     STAGES.forEach(id => $(id).classList.toggle("on", id === v));
     views.querySelectorAll("button").forEach(b => b.classList.toggle("cur", b.dataset.v === v || (v === "live" && b.dataset.v === "floor")));
-    if (!opts.keepZoom) { $("silo").style.transform = ""; floorSvg.style.transform = ""; still(live); still(hall); }
+    if (!opts.keepZoom) { $("silo").style.transform = ""; floorSvg.style.transform = ""; still(live); still(hall); still(front); }
     let t = "Tap a floor to look inside";
     if (cur) {
       if (v === "floor" || v === "live") t = cur.lvl === "B8" ? "B8 · the floor that doesn't exist" : `${cur.lvl} · ${LV[cur.lvl].name}`;
-      else if (v === "hall") t = `Bed ${fmt(cur.bed)} · @${cur.handle}`;
+      else if (v === "hall" || v === "front") t = `Bed ${fmt(cur.bed)} · @${cur.handle}`;
       else if (v === "door") t = cur.lvl === "B8" ? "Bed 0" : `Bed ${fmt(cur.bed)}`;
     }
     cap.textContent = t; cap.classList.add("on");
@@ -477,10 +482,11 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     try { if (innerWidth < 820) fig.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
     stage("silo");
     const lockCap = () => { cap.textContent = `Bed ${fmt(c.bed)} · held · follow to unlock`; };
-    if (RM) { stage("door"); lockCap(); return; }
+    if (RM) { load(front, frontQS(c)).then(w => { if (me === run) { stage(w ? "front" : "door"); lockCap(); } }); return; }
     const i = LEVELS.findIndex(l => l.id === c.lvl), cy = 40 + i * 40 + 17;
     timers.push(setTimeout(() => { if (me !== run) return; const s = $("silo"); s.style.transformOrigin = `50% ${(cy / 400 * 100).toFixed(1)}%`; s.style.transform = "scale(2.2)"; cap.textContent = `${c.lvl} · ${LV[c.lvl].name}`; }, 300));
-    timers.push(setTimeout(() => { if (me !== run) return; stage("door"); lockCap(); }, 1500));
+    const pd = load(front, frontQS(c)); cur.frontP = pd;
+    timers.push(setTimeout(async () => { if (me !== run) return; const w = await pd; if (me !== run) return; blk.classList.add("on"); await wait(300); if (me !== run) return; stage(w ? "front" : "door"); blk.classList.remove("on"); lockCap(); if (w) { await wait(150); walkTo(front, [.5, .46], 1.1); } }, 1400));
   }
   function resetScene() { run++; timers.forEach(clearTimeout); timers = []; cur = null; views.hidden = true; $("finfo").hidden = true; blk.classList.remove("on"); stage("silo"); }
   const wait = ms => new Promise(r => timers.push(setTimeout(r, ms)));
@@ -494,9 +500,10 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     // start drawing both scenes now, while the silo zooms
     const pf = b8 ? Promise.resolve(null) : load(live, floorQS(c.lvl));
     const ph = b8 ? Promise.resolve(null) : load(hall, hallQS(c));
-    cur.liveP = pf; cur.hallP = ph;
+    const pd = b8 ? Promise.resolve(null) : load(front, frontQS(c));
+    cur.liveP = pf; cur.hallP = ph; cur.frontP = pd;
     try { if (innerWidth < 820) fig.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
-    if (RM) { const w = await ph; if (me !== run) return; stage(w ? "hall" : "door"); return; }
+    if (RM) { const w = await pd; if (me !== run) return; stage(w ? "front" : "door"); return; }
     stage("silo");
     const i = LEVELS.findIndex(l => l.id === c.lvl), cy = b8 ? 367 : 40 + i * 40 + 17;
     await wait(350); if (me !== run) return;
@@ -518,6 +525,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     stage("hall"); blk.classList.remove("on");
     await wait(350); if (me !== run) return;
     walkTo(hall, hw.YOU ? [hw.YOU[0], hw.YOU[1] + .035] : [.22, .5], 2.25);
+    await wait(3000); if (me !== run) return;
+    const fw = await pd; if (me !== run || !fw) return;
+    blk.classList.add("on"); await wait(380); if (me !== run) return;
+    stage("front"); blk.classList.remove("on");
+    await wait(200); if (me !== run) return;
+    walkTo(front, [.5, .46], 1.12);
   }
 
   const INFO = {
@@ -558,6 +571,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     run++; timers.forEach(clearTimeout); timers = []; blk.classList.remove("on");
     const v = b.dataset.v;
     if (v === "floor" && cur.liveP) cur.liveP.then(w => stage(w && w.HAS ? "live" : "floor"));
+    else if (v === "door" && cur.frontP) cur.frontP.then(w => stage(w ? "front" : "door"));
     else stage(v);
   });
 

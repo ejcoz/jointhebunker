@@ -799,6 +799,63 @@ SCENES.h = async () => {
   finish({ haze: '#c8d0a0', hazeA: .04, dustCol: '#e8e8d0', dust: Math.round(110 * W * H / 1166400), vig: .66, glowA: .85 });
 };
 
+// ---------- your door, head-on (the last beat of the walk) ----------
+// ?f=d &n=48,143 &u=@handle &st=FOUNDER%20%23590 &sk=f|c|h   (sk: f founder red, c confirmed green, h held grey; held = locked, dark window)
+SCENES.d = async () => {
+  await Promise.all([new FontFace('Anton', 'url(fonts/Anton-Regular.ttf)').load().then(f => document.fonts.add(f)), new FontFace('Fredoka', 'url(fonts/Fredoka-latin.woff2)', { weight: '300 700' }).load().then(f => document.fonts.add(f))]);
+  const num = Q.get('n') || '48,143', handle = Q.get('u') || '', stamp = Q.get('st') || '', sk = Q.get('sk') || '', heldD = sk === 'h';
+  CAM.x = 0; CAM.y = 1.5; CAM.z = -1.2; FOC = W * (H > W ? .88 : .8); HZ = H * .47;
+  const WZ = 2.0, HW = 2.6, TOP = 3.1, D0 = .52, D1 = 2.42, DW = 1.16, xL = -DW / 2, xR = DW / 2;
+  const P2 = (x, y, z = WZ) => [x, y, z];
+  // corridor: floor, ceiling, side walls receding, the wall you face
+  ctx.fillStyle = '#060705'; ctx.fillRect(0, 0, W, H);
+  poly(ctx, [[-HW, 0, CAM.z + .2], [HW, 0, CAM.z + .2], [HW, 0, WZ], [-HW, 0, WZ]], '#1c1d17');
+  poly(ctx, [[-HW, TOP, CAM.z + .2], [HW, TOP, CAM.z + .2], [HW, TOP, WZ], [-HW, TOP, WZ]], '#121310');
+  poly(ctx, [P2(-HW, 0), P2(HW, 0), P2(HW, TOP), P2(-HW, TOP)], '#22231c');
+  for (let k = 0; k < 6; k++) line3(ctx, [P2(-HW, .9 + k * .45), P2(HW, .9 + k * .45)], 'rgba(0,0,0,.18)', .01);
+  for (let x = -2.4; x <= 2.4; x += .8) line3(ctx, [P2(x, 0), P2(x, TOP)], 'rgba(0,0,0,.16)', .01);
+  const Rs = rng(4242); for (let i = 0; i < 26; i++) { const x = -2.5 + Rs() * 5, y = .3 + Rs() * 2.6, q = pj(x, y, WZ - .01); if (!q) continue; const r = FOC * (.1 + Rs() * .3) / q[2]; const g = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], r); g.addColorStop(0, 'rgba(8,8,5,.25)'); g.addColorStop(1, 'rgba(8,8,5,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(q[0], q[1] + r * .5, r * .6, r * 1.3, 0, 0, 7); ctx.fill(); }
+  // ceiling light just in front of the door, and a pipe along the top
+  poly(ctx, [[-.5, TOP - .01, .6], [.5, TOP - .01, .6], [.5, TOP - .01, 1.4], [-.5, TOP - .01, 1.4]], '#e8edc8'); glow(0, TOP - .2, 1.0, 3, '#c8f08a', .18);
+  line3(ctx, [P2(-HW, TOP - .25, WZ - .1), P2(HW, TOP - .25, WZ - .1)], '#3b382c', .1);
+  const RR = (x0, y0, x1, y1, r, z = WZ) => { const pts = []; for (const [cx, cy, a0] of [[x1 - r, y1 - r, 0], [x0 + r, y1 - r, Math.PI / 2], [x0 + r, y0 + r, Math.PI], [x1 - r, y0 + r, 1.5 * Math.PI]]) for (let k = 0; k <= 8; k++) { const a = a0 + k / 8 * Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r, z]); } return pts; };
+  const dot = (x, y, r, col, z = WZ - .03) => { const q = pj(x, y, z); if (q) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(q[0], q[1], Math.max(.8, FOC * r / q[2]), 0, 7); ctx.fill(); } };
+  // a hatch drawn head-on at horizontal offset ox; mine = the lit gold one
+  function hatch(ox, mine, warm, seed) {
+    const R = rng(seed), z = WZ - .02, x0 = ox + xL, x1 = ox + xR, steel = mix(mine ? '#5e5a46' : '#4e4b3d', '#6e4a2e', .2 + R() * .25);
+    poly(ctx, RR(x0 - .12, D0 - .12, x1 + .12, D1 + .12, .4, WZ - .005), '#1d1c16', '#0c0c09', 2);
+    if (mine && !heldD) { line3(ctx, RR(x0 - .05, D0 - .05, x1 + .05, D1 + .05, .34, z).concat([RR(x0 - .05, D0 - .05, x1 + .05, D1 + .05, .34, z)[0]]), P.gold, .03); glow(ox, (D0 + D1) / 2, WZ - .3, 3.0, '#ffc23a', .1); glow(ox, .1, WZ - 1.2, 2.6, '#ffc23a', .1); }
+    poly(ctx, RR(x0, D0, x1, D1, .32, z), steel, '#121210', 2);
+    poly(ctx, RR(x0 + .1, D0 + .1, x1 - .1, D1 - .1, .24, z - .005), null, 'rgba(0,0,0,.4)', 1.5);
+    const by = D1 - .55;
+    for (let i = 0; i < 4; i++) { const xx = x0 + .2 + R() * (DW - .4), yy = by - .1 - R() * .15; line3(ctx, [[xx, yy, z - .006], [xx + (R() - .5) * .03, yy - .3 - R() * .6, z - .006]], 'rgba(150,90,45,.3)', .012 + R() * .014); }
+    const rim = RR(x0 + .05, D0 + .05, x1 - .05, D1 - .05, .27, z - .01); for (let i = 0; i < rim.length; i += 2) dot(rim[i][0], rim[i][1], .018, '#8a8068', z - .012);
+    poly(ctx, [[x0 + .06, by - .055, z - .008], [x1 - .06, by - .055, z - .008], [x1 - .06, by + .055, z - .008], [x0 + .06, by + .055, z - .008]], mix(steel, '#000', .32));
+    for (let x = x0 + .13; x < x1 - .08; x += .11) dot(x, by, .016, '#8a8068', z - .012);
+    const win = RR(x0 + .2, by + .12, x1 - .2, D1 - .16, .14, z - .008);
+    poly(ctx, win, mine && !heldD ? '#ffcf4a' : warm ? '#5a4426' : '#080907', '#121210', 2);
+    if (mine && !heldD) glow(ox, (by + D1) / 2, z - .1, 1.0, '#ffd86a', .45); else if (warm) glow(ox, (by + D1) / 2, z - .1, .7, '#ffc880', .3);
+    // wheel lock, low on the door
+    const wy = D0 + .58, wr = .21, wc = mine && !heldD ? P.gold : '#8a6a3a', ring = []; for (let i = 0; i <= 32; i++) { const a = i / 32 * 2 * Math.PI; ring.push([ox + Math.cos(a) * wr, wy + Math.sin(a) * wr, z - .04]); }
+    line3(ctx, ring, '#121210', .06); line3(ctx, ring, wc, .038);
+    line3(ctx, [[ox - wr, wy, z - .04], [ox + wr, wy, z - .04]], wc, .028); line3(ctx, [[ox, wy - wr, z - .04], [ox, wy + wr, z - .04]], wc, .028); dot(ox, wy, .04, wc, z - .045);
+    for (let i = 0; i < 4; i++) { const xx = ox - .27 + i * .16; poly(ctx, [[xx, D0 + .1, z - .008], [xx + .08, D0 + .1, z - .008], [xx + .08, D0 + .3, z - .008], [xx, D0 + .3, z - .008]], '#141410'); }
+    for (const hy of [D0 + .4, D1 - .45]) poly(ctx, [[x1 + .02, hy - .09, z - .01], [x1 + .13, hy - .09, z - .01], [x1 + .13, hy + .09, z - .01], [x1 + .02, hy + .09, z - .01]], '#2e2c24', '#121210', 1);
+  }
+  hatch(-2.25, false, true, 11); hatch(2.25, false, false, 12); hatch(0, true, false, 7);
+  // the number above, YOU and the handle tag below, the stamp across the door
+  const txt = (s, y, font, col, sz, z = WZ - .02) => { const q = pj(0, y, z); if (!q) return; const fs = FOC * sz / q[2]; ctx.font = font(fs); ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, q[0], q[1]); return { q, fs }; };
+  txt(num, D1 + .3, f => `${f}px Anton`, heldD ? '#8d8a7a' : '#ffc23a', .3);
+  if (!heldD) { txt('YOU', D0 - .28, f => `700 ${f}px Fredoka`, '#ffc23a', .22); glow(0, D0 - .28, WZ - .2, .9, '#ffc23a', .12); }
+  if (handle) {
+    const y = heldD ? D0 - .3 : D0 - .55, q = pj(0, y, WZ - .02); if (q) { let fs = FOC * .1 / q[2]; ctx.font = `600 ${fs}px Fredoka`; let tw = ctx.measureText(handle).width; const maxW = FOC * 1.3 / q[2]; if (tw > maxW) { fs *= maxW / tw; ctx.font = `600 ${fs}px Fredoka`; tw = maxW; } const hgt = fs * 1.7, wdt = tw + fs * 1.6; ctx.fillStyle = 'rgba(30,22,8,.92)'; ctx.strokeStyle = heldD ? '#6c6855' : '#c99a2a'; ctx.lineWidth = Math.max(1, fs * .1); ctx.beginPath(); ctx.roundRect(q[0] - wdt / 2, q[1] - hgt / 2, wdt, hgt, hgt / 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = heldD ? '#a9a48c' : '#ffc23a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(handle, q[0], q[1] + fs * .04); }
+  }
+  if (stamp) { const q = pj(0, D0 + .95, WZ - .06); if (q) { const fs = FOC * .14 / q[2], col = sk === 'f' ? '#c5221f' : sk === 'c' ? '#2f9a3a' : '#8a8670'; ctx.save(); ctx.translate(q[0], q[1]); ctx.rotate(-.14); ctx.font = `${fs}px Anton`; const tw = ctx.measureText(stamp).width; ctx.strokeStyle = col; ctx.lineWidth = fs * .12; ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.roundRect(-tw / 2 - fs * .4, -fs * .7, tw + fs * .8, fs * 1.4, fs * .15); ctx.fill(); ctx.stroke(); ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(stamp, 0, fs * .05); ctx.restore(); } }
+  // light pooling on the floor in front of the door
+  const fq = pj(0, 0, WZ - .6); if (fq && !heldD) { const g = ctx.createRadialGradient(fq[0], fq[1], 0, fq[0], fq[1], W * .35); g.addColorStop(0, 'rgba(255,194,58,.08)'); g.addColorStop(1, 'rgba(255,194,58,0)'); ctx.fillStyle = g; ctx.fillRect(0, fq[1] - W * .2, W, W * .5); }
+  finish({ haze: '#c8c09a', hazeA: .03, dustCol: '#e8dcc0', dust: Math.round(90 * W * H / 1166400), vig: .75, glowA: .6 });
+};
+
 window.HAS = !!SCENES[F];
 (async () => { if (SCENES[F]) await SCENES[F](); else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); window.READY = true; } })();
 </script></body></html>
