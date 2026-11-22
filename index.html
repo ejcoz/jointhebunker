@@ -382,12 +382,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   function floorQS(lvl) { return `f=${lvl.slice(1)}&w=${FW}&h=${FH}`; }
   function hallQS(c) {
     const L = LV[c.lvl], o = occupants(), plates = [];
-    for (let i = 0; i < 30; i++) {           // one plate per pod; your pod is #7 (second bay on the left, middle bunk)
-      const b = c.bed - 7 + i;
+    for (let i = 0; i < 16; i++) {           // one door per bed, as in episode 1; your door is #2 (second on the left)
+      const b = c.bed - 2 + i;
       if (b < L.lo || b > L.hi) { plates.push(null); continue; }
-      plates.push(["BED " + fmt(b), i === 7 ? "@" + short(c.handle) : b === 48143 || b === 100000 ? "RESERVED" : o.has(b) ? "@" + short(o.get(b)) : "VACANT"]);
+      plates.push([fmt(b), i === 2 ? "@" + short(c.handle) : b === 48143 || b === 100000 ? null : o.has(b) ? "@" + short(o.get(b)) : null]);
     }
-    return `f=h&w=${HW2}&h=${HH2}&you=7&plates=` + encodeURIComponent(JSON.stringify(plates));
+    return `f=h&w=${HW2}&h=${HH2}&you=2&plates=` + encodeURIComponent(JSON.stringify(plates));
   }
   // push in toward point p (0..1 of the frame), drifting it toward the centre without showing an edge
   function walkTo(el, p, sc) {
@@ -445,7 +445,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     if (!hw) { blk.classList.remove("on"); stage("door"); return; }
     stage("hall"); blk.classList.remove("on");
     await wait(350); if (me !== run) return;
-    walkTo(hall, hw.YOU || [.27, .35], 2.9);
+    walkTo(hall, hw.YOU ? [hw.YOU[0], hw.YOU[1] + .035] : [.22, .5], 2.25);
   }
 
   const INFO = {
