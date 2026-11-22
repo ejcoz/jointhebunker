@@ -73,6 +73,8 @@ button.ghost{background:transparent;color:var(--ink);border:2px solid #4a3a22;fo
 .tag .lv{font:700 18px Fredoka,sans-serif}
 .tag .where{margin:4px 0 0}
 .stamp{position:absolute;right:18px;top:44px;transform:rotate(-8deg);border:3px solid #b3261e;color:#b3261e;font:400 18px Anton,sans-serif;letter-spacing:.04em;padding:2px 10px;border-radius:4px;background:#ffffff22}
+.stamp.ok{border-color:#2f7d32;color:#2f7d32}
+.stamp.res{border-color:#6c6855;color:#5b5848;font-size:15px}
 .tag .note{margin:12px 0 0;padding-top:12px;border-top:2px dashed #15100a55;font-style:italic}
 .tag.zero{background:linear-gradient(160deg,#3a0d0d,#1a0606);color:#ffd9d9}
 .tag.zero .num{color:var(--red)}
@@ -306,13 +308,13 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     f += `<text x="${lx.toFixed(1)}" y="${(you.y + 4).toFixed(1)}" text-anchor="${anchor}" style="font:400 13px Anton,sans-serif;fill:#ffc23a;paint-order:stroke;stroke:#000;stroke-width:3px">YOU</text>`;
     return { svg: f, pos: you };
   }
-  function doorScene(lvl, bed, handle, fno) {
+  function doorScene(lvl, bed, handle, fno, confirmed) {
     const zero = lvl === "B8", L = LV[lvl];
     const steel1 = zero ? "#3a1c1c" : "#5d615b", steel2 = zero ? "#1a0b0b" : "#363934", lamp = zero ? "#ff3b3b" : "#9cf04a";
     const hTxt = handle ? "@" + handle : "", fit = hTxt.length > 16 ? ` textLength="104" lengthAdjust="spacingAndGlyphs"` : "";
     let d = `<defs><linearGradient id="cw" x1="0" x2="1"><stop offset="0" stop-color="#57533f"/><stop offset=".5" stop-color="#8b8670"/><stop offset="1" stop-color="#4b4838"/></linearGradient>
       <linearGradient id="st" x1="0" x2="1"><stop offset="0" stop-color="${steel2}"/><stop offset=".45" stop-color="${steel1}"/><stop offset="1" stop-color="${steel2}"/></linearGradient>
-      <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${zero ? "#5a1a1a" : "#ffd76a"}"/><stop offset="1" stop-color="${zero ? "#2a0a0a" : "#c9932a"}"/></linearGradient>
+      <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${zero ? "#5a1a1a" : confirmed ? "#ffd76a" : "#d6d2c2"}"/><stop offset="1" stop-color="${zero ? "#2a0a0a" : confirmed ? "#c9932a" : "#8f8b77"}"/></linearGradient>
       <radialGradient id="pl"><stop offset="0" stop-color="${lamp}" stop-opacity=".9"/><stop offset="1" stop-color="${lamp}" stop-opacity="0"/></radialGradient></defs>`;
     d += `<rect width="300" height="400" fill="url(#cw)"/><rect y="360" width="300" height="40" fill="#2b2820"/>`;
     d += `<text x="150" y="38" text-anchor="middle" style="font:400 22px Anton,sans-serif;letter-spacing:.06em;fill:${zero ? "#ff3b3b" : "#f2c230"}">${zero ? "B8 · DOES NOT EXIST" : esc(L.id + " · " + L.name.toUpperCase())}</text>`;
@@ -325,7 +327,9 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     d += `<text x="150" y="220" text-anchor="middle" style="font:400 ${bed >= 10000 ? 28 : 32}px Anton,sans-serif;fill:${zero ? "#ff3b3b" : "#1a1206"}">${zero ? "0" : fmt(bed)}</text>`;
     d += `<text x="150" y="237" text-anchor="middle"${zero ? ` textLength="104" lengthAdjust="spacingAndGlyphs"` : fit} style="font:600 11px Inter,sans-serif;fill:${zero ? "#ffd9d9" : "#3a2606"}">${zero ? "LATCHED FROM INSIDE" : esc(hTxt)}</text>`;
     d += `<rect x="204" y="262" width="12" height="44" rx="5" fill="#9a9d96"/></g>`;
-    if (fno && !zero) d += `<g transform="translate(150 300) rotate(-9)"><rect x="-62" y="-15" width="124" height="30" rx="3" fill="#ffffff22" stroke="#c5221f" stroke-width="3"/><text x="0" y="8" text-anchor="middle" style="font:400 19px Anton,sans-serif;fill:#c5221f;letter-spacing:.04em">FOUNDER #${fno}</text></g>`;
+    const stampTxt = zero ? "" : fno ? `FOUNDER #${fno}` : confirmed ? "CONFIRMED" : "RESERVED · UNCONFIRMED";
+    const stampCol = fno ? "#c5221f" : confirmed ? "#2f7d32" : "#8a8670";
+    if (stampTxt) d += `<g transform="translate(150 300) rotate(-9)"><rect x="-${confirmed || fno ? 62 : 80}" y="-15" width="${confirmed || fno ? 124 : 160}" height="30" rx="3" fill="#ffffff22" stroke="${stampCol}" stroke-width="3"/><text x="0" y="8" text-anchor="middle" style="font:400 ${confirmed || fno ? 19 : 15}px Anton,sans-serif;fill:${stampCol};letter-spacing:.04em">${stampTxt}</text></g>`;
     d += `<rect x="72" y="358" width="156" height="3" fill="${lamp}" opacity=".9"/><rect x="40" y="361" width="220" height="16" fill="${lamp}" opacity=".12"/>`;
     return d;
   }
@@ -341,7 +345,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   function play(c) {
     timers.forEach(clearTimeout); timers = []; cur = c;
     const fl = floorScene(c.lvl, c.bed); floorSvg.innerHTML = fl.svg; cur.pos = fl.pos;
-    doorSvg.innerHTML = doorScene(c.lvl, c.bed, c.handle, c.fno);
+    doorSvg.innerHTML = doorScene(c.lvl, c.bed, c.handle, c.fno, c.confirmed);
     views.hidden = false;
     if (RM) { stage("door"); return; }
     stage("silo");
@@ -398,10 +402,13 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     $("lv").textContent = L.id + " · " + L.name;
     $("where").textContent = L.where;
     $("note").textContent = NOTES[kind] ?? NOTES[""];
-    const fno = FOUNDER_NO.get(key);
-    if (fno) { $("stamp").textContent = "FOUNDER #" + fno; $("stamp").hidden = false; $("note").textContent += " Your name is on the Founders Wall."; }
-    lastLine = `Bed ${fmt(bed)} · ${L.id} ${L.name.toLowerCase()}${fno ? ` · Founder #${fno}` : ""} ☢️`;
-    tag.classList.add("show"); light(L.id); play({ lvl: L.id, bed, handle: key, fno }); $("next").classList.add("show"); $("msg").textContent = "";
+    const fno = FOUNDER_NO.get(key), confirmed = KNOWN.has(key);
+    const st = $("stamp"); st.className = "stamp" + (fno ? "" : confirmed ? " ok" : " res");
+    st.textContent = fno ? "FOUNDER #" + fno : confirmed ? "CONFIRMED" : "UNCONFIRMED"; st.hidden = false;
+    if (fno) $("note").textContent += " Your name is on the Founders Wall.";
+    if (!confirmed) $("note").textContent = "Reserved, not confirmed. You're not on the manifest yet. We check it after every Transmission. Follow to confirm your bed.";
+    lastLine = `Bed ${fmt(bed)} · ${L.id} ${L.name.toLowerCase()}${fno ? ` · Founder #${fno}` : confirmed ? "" : " · reserved"} ☢️`;
+    tag.classList.add("show"); light(L.id); play({ lvl: L.id, bed, handle: key, fno, confirmed }); $("next").classList.add("show"); $("msg").textContent = "";
     try { localStorage.setItem("bunkerHandle", key) } catch {}
   }
   $("dymBtn").addEventListener("click", () => { const h = $("dymBtn").textContent.replace(/^@/, ""); $("handle").value = h; show(h) });
