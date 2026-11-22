@@ -385,7 +385,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   }
   function doorScene(lvl, bed, handle, fno, confirmed) {
     const zero = lvl === "B8", L = LV[lvl];
-    const steel1 = zero ? "#3a1c1c" : "#5d615b", steel2 = zero ? "#1a0b0b" : "#363934", lamp = zero ? "#ff3b3b" : "#9cf04a";
+    const steel1 = zero ? "#3a1c1c" : "#5e5a48", steel2 = zero ? "#1a0b0b" : "#2e2c24", lamp = zero ? "#ff3b3b" : confirmed ? "#ffc23a" : "#9cf04a";
     const hTxt = handle ? "@" + handle : "", fit = hTxt.length > 16 ? ` textLength="104" lengthAdjust="spacingAndGlyphs"` : "";
     let d = `<defs><linearGradient id="cw" x1="0" x2="1"><stop offset="0" stop-color="#57533f"/><stop offset=".5" stop-color="#8b8670"/><stop offset="1" stop-color="#4b4838"/></linearGradient>
       <linearGradient id="st" x1="0" x2="1"><stop offset="0" stop-color="${steel2}"/><stop offset=".45" stop-color="${steel1}"/><stop offset="1" stop-color="${steel2}"/></linearGradient>
@@ -394,15 +394,26 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     d += `<rect width="300" height="400" fill="url(#cw)"/><rect y="360" width="300" height="40" fill="#2b2820"/>`;
     const ttl = zero ? "B8 · DOES NOT EXIST" : L.id + " · " + L.name.toUpperCase();
     d += `<text x="150" y="38" text-anchor="middle"${ttl.length > 20 ? ' textLength="268" lengthAdjust="spacingAndGlyphs"' : ""} style="font:400 22px Anton,sans-serif;letter-spacing:.06em;fill:${zero ? "#ff3b3b" : "#f2c230"}">${zero ? "B8 · DOES NOT EXIST" : esc(L.id + " · " + L.name.toUpperCase())}</text>`;
-    d += `<rect x="62" y="52" width="176" height="312" rx="10" fill="#22201a"/>` + Array.from({ length: 8 }, (_, k) => `<rect x="${62 + k * 22}" y="52" width="11" height="8" fill="${zero ? "#ff3b3b" : "#f2c230"}"/>`).join("");
-    d += `<g class="${zero ? "knock" : ""}"><rect x="72" y="64" width="156" height="296" rx="8" fill="url(#st)" stroke="#1a1a17" stroke-width="2"/>`;
-    d += [[84, 76], [216, 76], [84, 348], [216, 348], [84, 212], [216, 212]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#9a9d96"/>`).join("");
-    d += `<circle cx="150" cy="118" r="30" fill="url(#pl)"/><circle cx="150" cy="118" r="20" fill="#12140f" stroke="#9a9d96" stroke-width="3"/><circle cx="150" cy="118" r="12" fill="${lamp}" opacity=".55"/>`;
-    d += `<rect x="92" y="170" width="116" height="74" rx="4" fill="url(#gp)" stroke="#6b4a12" stroke-width="1.5"/>`;
+    // the door: an old submarine hatch (riveted rim and band, small window, wheel lock, hinges, vent slats)
+    const winCol = zero ? "#ff3b3b" : confirmed ? "#ffcf4a" : "#0b0c09", wheelCol = zero ? "#8a2a22" : confirmed ? "#f2c230" : "#8a6a3a";
+    const rr = (x0, y0, x1, y1, r) => { const pts = []; for (const [cx, cy, a0] of [[x1 - r, y0 + r, -Math.PI / 2], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, Math.PI / 2], [x0 + r, y0 + r, Math.PI]]) for (let k = 0; k <= 6; k++) { const a = a0 + k / 6 * Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return pts; };
+    d += `<rect x="58" y="48" width="184" height="318" rx="62" fill="#1b1a15"/>` + Array.from({ length: 8 }, (_, k) => `<rect x="${78 + k * 19}" y="41" width="10" height="6" fill="${zero ? "#ff3b3b" : "#f2c230"}"/>`).join("");
+    if (confirmed && !zero) d += `<rect x="62" y="52" width="176" height="310" rx="58" fill="none" stroke="#ffc23a" stroke-width="3" opacity=".9"/>`;
+    d += `<g class="${zero ? "knock" : ""}"><rect x="70" y="60" width="160" height="296" rx="54" fill="url(#st)" stroke="#121210" stroke-width="2.5"/>`;
+    d += `<rect x="80" y="70" width="140" height="276" rx="46" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1.5"/>`;
+    d += `<path d="M98 140 l2 60 M196 136 l-3 90 M150 250 l1 40" stroke="rgba(150,90,45,.35)" stroke-width="2.5" fill="none"/>`;
+    d += rr(76, 66, 224, 350, 50).filter((_, i) => i % 2 === 0).map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="#8a8068"/>`).join("");
+    d += `<rect x="78" y="128" width="144" height="10" fill="rgba(0,0,0,.35)"/>` + Array.from({ length: 11 }, (_, k) => `<circle cx="${86 + k * 12.8}" cy="133" r="2.2" fill="#8a8068"/>`).join("");
+    d += `<rect x="102" y="76" width="96" height="44" rx="18" fill="${winCol}" stroke="#121210" stroke-width="2"/>`;
+    if (confirmed || zero) d += `<rect x="102" y="76" width="96" height="44" rx="18" fill="url(#pl)" opacity=".8"/>`;
+    d += `<g transform="translate(150 290)"><circle r="25" fill="none" stroke="#121210" stroke-width="7"/><circle r="25" fill="none" stroke="${wheelCol}" stroke-width="4.5"/><path d="M-25 0 H25 M0 -25 V25" stroke="${wheelCol}" stroke-width="3.5"/><circle r="5" fill="${wheelCol}"/></g>`;
+    d += Array.from({ length: 4 }, (_, k) => `<rect x="${118 + k * 18}" y="322" width="9" height="22" rx="2" fill="#141410"/>`).join("");
+    d += [[232, 110], [232, 300]].map(([x, y]) => `<rect x="${x - 4}" y="${y - 12}" width="10" height="24" rx="2" fill="#2e2c24" stroke="#121210"/>`).join("");
+    d += `<rect x="92" y="166" width="116" height="78" rx="4" fill="url(#gp)" stroke="#6b4a12" stroke-width="1.5"/>`;
     d += `<text x="150" y="188" text-anchor="middle" style="font:700 10px Inter,sans-serif;letter-spacing:.2em;fill:${zero ? "#ffd9d9" : "#3a2606"}">BED</text>`;
     d += `<text x="150" y="220" text-anchor="middle" style="font:400 ${bed >= 10000 ? 28 : 32}px Anton,sans-serif;fill:${zero ? "#ff3b3b" : "#1a1206"}">${zero ? "0" : fmt(bed)}</text>`;
     d += `<text x="150" y="237" text-anchor="middle"${zero ? ` textLength="104" lengthAdjust="spacingAndGlyphs"` : fit} style="font:600 11px Inter,sans-serif;fill:${zero ? "#ffd9d9" : "#3a2606"}">${zero ? "LATCHED FROM INSIDE" : esc(hTxt)}</text>`;
-    d += `<rect x="204" y="262" width="12" height="44" rx="5" fill="#9a9d96"/></g>`;
+    d += `</g>`;
     const stampTxt = zero ? "" : fno ? `FOUNDER #${fno}` : confirmed ? "CONFIRMED" : "HELD · LOCKED";
     const stampCol = fno ? "#c5221f" : confirmed ? "#2f7d32" : "#8a8670";
     if (stampTxt) d += `<g transform="translate(150 300) rotate(-9)"><rect x="-${confirmed || fno ? 62 : 80}" y="-15" width="${confirmed || fno ? 124 : 160}" height="30" rx="3" fill="#ffffff22" stroke="${stampCol}" stroke-width="3"/><text x="0" y="8" text-anchor="middle" style="font:400 ${confirmed || fno ? 19 : 15}px Anton,sans-serif;fill:${stampCol};letter-spacing:.04em">${stampTxt}</text></g>`;
