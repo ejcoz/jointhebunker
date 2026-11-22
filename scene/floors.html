@@ -134,8 +134,32 @@ function dormDoor(phi, yc, r, openDeg = 28, seed = 1) {
     c.save(); c.beginPath(); q.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); c.clip();
     const cx = q.reduce((a, p) => a + p[0], 0) / q.length, cy = q.reduce((a, p) => a + p[1], 0) / q.length, rr = Math.max(...q.map(p => Math.hypot(p[0] - cx, p[1] - cy))); window.DOOR = [cx / W, cy / H, rr / W];
     const gr = c.createRadialGradient(cx, cy + rr * .2, 0, cx, cy, rr * 1.2); gr.addColorStop(0, '#d9a75a'); gr.addColorStop(.6, '#6e4f2a'); gr.addColorStop(1, '#1a140c'); c.fillStyle = gr; c.fillRect(cx - rr * 1.5, cy - rr * 1.5, rr * 3, rr * 3);
-    // receding bunk tiers seen through the door
-    for (let k = 0; k < 6; k++) { const d = 1 - k * .13; const w = rr * 2.2 * d, x0 = cx - w / 2; for (let j = 0; j < 4; j++) { const y = cy - rr * .75 * d + j * rr * .42 * d; c.fillStyle = `rgba(20,16,10,${.55 + k * .06})`; c.fillRect(x0, y, w * .38, rr * .08 * d); c.fillRect(x0 + w * .62, y, w * .38, rr * .08 * d); c.fillStyle = `rgba(156,240,74,${.5 - k * .07})`; c.fillRect(x0, y + rr * .08 * d, w * .38, 1.2); c.fillRect(x0 + w * .62, y + rr * .08 * d, w * .38, 1.2); if (Rd() < .4) { c.fillStyle = 'rgba(255,214,140,.85)'; c.beginPath(); c.arc(x0 + w * (Rd() < .5 ? .2 : .8), y - rr * .04 * d, 1.6 + 2 * d, 0, 7); c.fill(); } } }
+    // through the door: the long hallway of hatches, in perspective
+    { const vx = cx, vy = cy + rr * .08, sec = k => { const d = 1 / (1 + k * .55); return { d, w: rr * 1.25 * d, t: vy - rr * 1.0 * d, b: vy + rr * 1.05 * d }; };
+      c.fillStyle = '#0d0b08'; c.fillRect(cx - rr * 1.5, cy - rr * 1.5, rr * 3, rr * 3);
+      for (let k = 14; k >= 0; k--) {
+        const A = sec(k), B = sec(k + 1), sh = Math.min(1, k / 12), wall = mix('#4a4232', '#0d0b08', sh), fl = mix('#3a3326', '#0d0b08', sh), ce = mix('#262118', '#0d0b08', sh);
+        c.fillStyle = fl; c.beginPath(); c.moveTo(vx - A.w, A.b); c.lineTo(vx + A.w, A.b); c.lineTo(vx + B.w, B.b); c.lineTo(vx - B.w, B.b); c.fill();
+        c.fillStyle = ce; c.beginPath(); c.moveTo(vx - A.w, A.t); c.lineTo(vx + A.w, A.t); c.lineTo(vx + B.w, B.t); c.lineTo(vx - B.w, B.t); c.fill();
+        for (const sd of [-1, 1]) {
+          c.fillStyle = wall; c.beginPath(); c.moveTo(vx + sd * A.w, A.t); c.lineTo(vx + sd * B.w, B.t); c.lineTo(vx + sd * B.w, B.b); c.lineTo(vx + sd * A.w, A.b); c.fill();
+          // a hatch on this stretch of wall: from 20% to 75% of the way to the next section, door-height
+          const P0 = sec(k + .2), P1 = sec(k + .75), dy = (P) => [P.b - (P.b - P.t) * .78, P.b - (P.b - P.t) * .06];
+          const [t0, b0] = dy(P0), [t1, b1] = dy(P1), x0 = vx + sd * P0.w, x1 = vx + sd * P1.w;
+          c.fillStyle = mix('#1d1c16', '#0d0b08', sh); c.beginPath(); c.moveTo(x0, t0 - 2 * P0.d); c.lineTo(x1, t1 - 2 * P1.d); c.lineTo(x1, b1); c.lineTo(x0, b0); c.fill();
+          const ix = (u) => x0 + (x1 - x0) * u, iy = (u, v) => (t0 + (t1 - t0) * u) + ((b0 + (b1 - b0) * u) - (t0 + (t1 - t0) * u)) * v;
+          c.fillStyle = mix('#5a5446', '#0d0b08', sh); c.beginPath(); c.moveTo(ix(.12), iy(.12, .06)); c.lineTo(ix(.88), iy(.88, .06)); c.lineTo(ix(.88), iy(.88, .97)); c.lineTo(ix(.12), iy(.12, .97)); c.fill();
+          const lit = Rd() < .5; c.fillStyle = lit ? mix('#ffc880', '#0d0b08', sh * .7) : '#080706'; c.beginPath(); c.moveTo(ix(.3), iy(.3, .14)); c.lineTo(ix(.7), iy(.7, .14)); c.lineTo(ix(.7), iy(.7, .28)); c.lineTo(ix(.3), iy(.3, .28)); c.fill();
+          c.strokeStyle = mix('#8a6a3a', '#0d0b08', sh); c.lineWidth = Math.max(.6, 1.6 * P0.d); c.beginPath(); c.ellipse(ix(.5), iy(.5, .6), Math.abs(x1 - x0) * .16, (b0 - t0) * .09, 0, 0, 7); c.stroke();
+        }
+        // ceiling light panel and the green strip along the floor edge
+        if (k % 2 === 0) { const L0 = sec(k + .35), L1 = sec(k + .65); c.fillStyle = mix('#f0ead0', '#0d0b08', sh * .8); c.beginPath(); c.moveTo(vx - L0.w * .25, L0.t + 1); c.lineTo(vx + L0.w * .25, L0.t + 1); c.lineTo(vx + L1.w * .25, L1.t + 1); c.lineTo(vx - L1.w * .25, L1.t + 1); c.fill(); }
+        c.strokeStyle = hex('#9CF04A', .5 * (1 - sh)); c.lineWidth = Math.max(.5, 1.5 * A.d); for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(vx + sd * A.w, A.b); c.lineTo(vx + sd * B.w, B.b); c.stroke(); }
+        // dashed amber centre line
+        if (k % 1 === 0) { const D0 = sec(k + .2), D1 = sec(k + .55); c.fillStyle = hex(P.amber, .8 * (1 - sh)); c.beginPath(); c.moveTo(vx - 2 * D0.d, D0.b); c.lineTo(vx + 2 * D0.d, D0.b); c.lineTo(vx + 2 * D1.d, D1.b); c.lineTo(vx - 2 * D1.d, D1.b); c.fill(); }
+      }
+      const g = c.createRadialGradient(vx, vy, 0, vx, vy, rr * .5); g.addColorStop(0, 'rgba(255,200,120,.35)'); g.addColorStop(1, 'rgba(255,200,120,0)'); c.fillStyle = g; c.fillRect(vx - rr, vy - rr, rr * 2, rr * 2);
+    }
     c.restore();
     // the door leaf, hinged at its left edge, swung inward toward the room
     const hs = phi > 0 ? 1 : -1, th = openDeg * D2R; const hinge = [b0[0] + hs * t[0] * r, yc, b0[2] + hs * t[2] * r];
@@ -680,7 +704,6 @@ SCENES[5] = () => {
   dormDoor(0, 2.5, 2.3, 70, 55);
   // the floor: everyone's things, bedrolls, lanterns, laundry
   belongings(505, { n: 30, x0: -4.6, x1: 4.6, z0: 4.0, z1: 8.2 });
-  for (const z of [5.0, 7.2]) { const pts = []; for (let t = 0; t <= 1.0001; t += .05) pts.push([-4.5 + 9 * t, 2.9 - .45 * 4 * t * (1 - t), z]); add(dist(0, z) - .3, c => { line3(c, pts, '#d8d0b4', .012); const Rl = rng(Math.round(z * 10) + 500); for (let i = 1; i < 12; i++) { const t = i / 12 + (Rl() - .5) * .03, x = -4.5 + 9 * t, y = 2.9 - .45 * 4 * t * (1 - t), w = .14 + Rl() * .12, h = .28 + Rl() * .3; if (Rl() < .25 || Math.abs(x) < 1.6) continue; poly(c, [[x - w, y, z], [x + w, y, z], [x + w * .9, y - h, z], [x - w * .9, y - h, z]], ['#7a3a2a', '#3d5a6a', '#c9c3ad', '#5d6e45', '#8a7a3a', '#5a4a6a'][Math.floor(Rl() * 6)], 'rgba(0,0,0,.25)', 1); } }); }
   add(dist(1.4, 4.4), c => { const q = pj(1.4, .55, 4.4), q2 = pj(1.55, 1.2, 4.45); if (!q || !q2) return; const s = FOC / q[2]; c.fillStyle = '#8a5a2a'; c.beginPath(); c.ellipse(q[0], q[1], s * .2, s * .26, -.2, 0, 7); c.fill(); c.fillStyle = '#1a120a'; c.beginPath(); c.arc(q[0], q[1] - s * .05, s * .06, 0, 7); c.fill(); c.strokeStyle = '#5a3a1a'; c.lineWidth = s * .05; c.beginPath(); c.moveTo(q[0], q[1] - s * .2); c.lineTo(q2[0], q2[1]); c.stroke(); });
   add(dist(-1.0, 4.1), c => { const q = pj(-1.0, .14, 4.1); if (!q) return; const r = FOC * .14 / q[2]; c.fillStyle = '#e8e4d8'; c.beginPath(); c.arc(q[0], q[1], r, 0, 7); c.fill(); c.fillStyle = '#26241d'; for (const [dx, dy, s] of [[0, 0, .32], [-.6, -.35, .22], [.6, -.35, .22]]) { c.beginPath(); c.arc(q[0] + dx * r, q[1] + dy * r, r * s, 0, 7); c.fill(); } });
   lampCage(-2.2, 5.2, '#ffd27a', .6, 4.2); lampCage(2.2, 5.2, '#ffd27a', .6, 4.2); lampCage(0, 8.2, '#ffd27a', .5, 7.5);
