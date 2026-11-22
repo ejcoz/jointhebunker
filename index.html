@@ -94,6 +94,8 @@ button.ghost{background:transparent;color:var(--ink);border:2px solid #4a3a22;fo
 .stamp.res{border-color:#6c6855;color:#5b5848;font-size:15px}
 .tag .note{margin:12px 0 0;padding-top:12px;border-top:2px dashed #15100a55;font-style:italic}
 .views[hidden]{display:none}
+.flnav{display:flex;gap:8px;width:100%;justify-content:center}
+.flnav button{min-width:96px}
 .tag.held .num{color:#6c6855;opacity:.55}
 .tag.held{background:linear-gradient(160deg,#b9b49e,#7c7865)}
 .follow{display:inline-block;margin-top:12px;background:var(--hz);color:#15100a;border-radius:999px;padding:11px 20px;font:600 16px Fredoka,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(242,194,48,.35)}
@@ -143,6 +145,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
         <button type="button" data-v="hall">Your bunk</button>
         <button type="button" data-v="door">Your door</button>
         <button type="button" data-v="replay">Walk me there again</button>
+        <span class="flnav"><button type="button" data-v="up" aria-label="Floor above">↑ <span id="upLbl">B1</span></button><button type="button" data-v="down" aria-label="Floor below"><span id="downLbl">B2</span> ↓</button></span>
       </div>
       <div class="finfo" id="finfo" hidden></div>
     </div>
@@ -518,7 +521,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     const me = ++run; timers.forEach(clearTimeout); timers = []; cur = c; blk.classList.remove("on");
     const fl = floorScene(c.lvl, c.bed); floorSvg.innerHTML = fl.svg; cur.pos = fl.pos;
     doorSvg.innerHTML = doorScene(c.lvl, c.bed, c.handle, c.fno, c.confirmed);
-    views.hidden = false; views.querySelectorAll("button").forEach(b => b.hidden = false); info(c.lvl);
+    views.hidden = false; views.querySelectorAll("button").forEach(b => b.hidden = false); info(c.lvl); navLabels(c.lvl);
     const b8 = c.lvl === "B8";
     views.querySelector('[data-v="hall"]').hidden = b8;
     // start drawing both scenes now, while the silo zooms
@@ -584,15 +587,22 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     el.innerHTML = `<h3>${lvl} · ${name}</h3><div class="rng">${lvl === "B8" ? "Bed 0 · one bed" : `Beds ${fmt(L.lo)} – ${fmt(L.hi)}`}</div><p>${a}</p><p><em>${b}</em></p>${JOBS[lvl] ? `<span class="job">${JOBS[lvl]}</span>` : ""}`;
     el.hidden = false;
   }
-  function tour(lvl) {
+  const ORDER = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"];
+  function navLabels(lvl) {
+    const i = ORDER.indexOf(lvl), up = views.querySelector('[data-v="up"]'), dn = views.querySelector('[data-v="down"]');
+    up.hidden = i <= 0; dn.hidden = i < 0 || i >= ORDER.length - 1;
+    if (i > 0) $("upLbl").textContent = ORDER[i - 1]; if (i < ORDER.length - 1) $("downLbl").textContent = ORDER[i + 1];
+  }
+  function tour(lvl, quick) {
     timers.forEach(clearTimeout); timers = []; cur = { lvl, bed: null, tour: true };
     const fl = floorScene(lvl, lvl === "B8" ? 0 : null); floorSvg.innerHTML = fl.svg;
     views.hidden = false; views.querySelector('[data-v="door"]').hidden = true; views.querySelector('[data-v="replay"]').hidden = true;
     light(lvl); info(lvl);
-    views.querySelector('[data-v="hall"]').hidden = true;
+    views.querySelector('[data-v="hall"]').hidden = true; navLabels(lvl);
     const me = ++run, pf = load(live, floorQS(lvl)); cur.liveP = pf;
     const show2 = async () => { const w = await pf; if (me !== run) return; stage(w && w.HAS ? "live" : "floor", { keepZoom: true }); };
     if (RM) { show2(); return; }
+    if (quick) { blk.classList.add("on"); timers.push(setTimeout(async () => { await show2(); blk.classList.remove("on"); }, 300)); return; }
     stage("silo");
     const i = LEVELS.findIndex(l => l.id === lvl), cy = lvl === "B8" ? 367 : 40 + i * 40 + 17;
     timers.push(setTimeout(() => { const sv = $("silo"); sv.style.transformOrigin = `50% ${(cy / 400 * 100).toFixed(1)}%`; sv.style.transform = "scale(4.2)"; }, 120));
@@ -602,6 +612,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   views.addEventListener("click", e => {
     const b = e.target.closest("button[data-v]"); if (!b || !cur) return;
     if (b.dataset.v === "replay") { play(cur); return; }
+    if (b.dataset.v === "up" || b.dataset.v === "down") { const i = ORDER.indexOf(cur.lvl) + (b.dataset.v === "up" ? -1 : 1); if (i >= 0 && i < ORDER.length) { light(ORDER[i]); tour(ORDER[i], true); } return; }
     run++; timers.forEach(clearTimeout); timers = []; blk.classList.remove("on");
     const v = b.dataset.v;
     if (v === "floor" && cur.liveP) cur.liveP.then(w => stage(w && w.HAS ? "live" : "floor"));

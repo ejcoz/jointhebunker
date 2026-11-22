@@ -453,7 +453,7 @@ function hatchWall(phiA, phiB, ys, seed, opt = {}) {
     }
     for (let k = 0; k < 3; k++) { if (ys.length < 2) break; const a = (phiA + (phiB - phiA) * (.2 + k * .3)) * D2R; line3(c, [wallP(a - .35 * D2R, 0, .65), wallP(a - .35 * D2R, ys[ys.length - 1], .65)], '#6b6650', .03); line3(c, [wallP(a + .35 * D2R, 0, .65), wallP(a + .35 * D2R, ys[ys.length - 1], .65)], '#6b6650', .03); for (let y = .25; y < ys[ys.length - 1]; y += .32) line3(c, [wallP(a - .35 * D2R, y, .65), wallP(a + .35 * D2R, y, .65)], '#6b6650', .02); }
   });
-  for (const y of ys) { const pts = []; for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 3) pts.push(wallP(a * D2R, y - .05, .07)); add(R + 5.9, c => line3(c, pts, P.green, .02, 'butt')); glowLine(pts, P.green, .14, .5); }
+  if (opt.strips !== false) for (const y of ys) { const pts = []; for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 3) pts.push(wallP(a * D2R, y - .05, .07)); add(R + 5.9, c => line3(c, pts, P.green, .02, 'butt')); glowLine(pts, P.green, .14, .5); }
 }
 // survivors' belongings scattered on the floor
 function belongings(seed, area) {
@@ -735,8 +735,8 @@ SCENES[5] = () => {
   shell({ wall: '#4e4b3a', floor: '#24251b', ceil: '#191a12', marks: [-70, 70], ring: false });
   // the mass view: hatches in four tiers curving round the whole room, catwalks between them
   const ys = [.1, 2.95, 5.8];
-  hatchWall(-128, -12, ys, 501, { you: [6, 1], bay: 8.2, h: 2.25 });
-  hatchWall(12, 128, ys, 502, { bay: 8.2, h: 2.25 });
+  hatchWall(-128, -12, ys, 501, { you: [6, 1], bay: 8.2, h: 2.25, strips: false });
+  hatchWall(12, 128, ys, 502, { bay: 8.2, h: 2.25, strips: false });
   dormDoor(0, 2.5, 2.3, 70, 55);
   // the common room: rugs, sofas round a coffee table, lamps, plants from the garden, a long dining table, books
   rug(-2.6, 5.6, .15, 3.2, 2.4, '#7a3a2a', '#d8a23a'); rug(2.8, 6.4, -.1, 3.2, 2.0, '#3d4a5a', '#c9c3ad');
@@ -750,8 +750,7 @@ SCENES[5] = () => {
   bulbs(-5.5, 5.4, 5.5, 5.8, 4.1, .8); bulbs(-5.8, 7.6, 5.8, 8.0, 4.4, .9);
   lampCage(-2.2, 5.2, '#ffd27a', .6, 4.2); lampCage(2.2, 5.2, '#ffd27a', .6, 4.2); lampCage(0, 8.2, '#ffd27a', .5, 7.5);
   for (const [x, z] of [[-4, 8], [4, 8], [0, 9.2]]) glow(x, 7.8, z, 3.5, '#ffd27a', .12);
-  glow(0, 2, 9, 9, '#ffd27a', .08); glow(-6, 1.5, 2, 6, '#9CF04A', .05); glow(6, 1.5, 2, 6, '#9CF04A', .05);
-  cables(52, 4); ceilingPipes(51, 2);
+  glow(0, 2, 9, 9, '#ffd27a', .08); cables(52, 4); ceilingPipes(51, 2);
   puddle(.3, 5.4, .5);
   finish({ haze: '#c8c09a', hazeA: .09, dustCol: '#e8dcc0', dust: 130, vig: .68, glowA: .8 });
 };
