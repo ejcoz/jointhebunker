@@ -296,6 +296,293 @@ SCENES[7] = () => {
   finish({ haze: '#e09a5c', hazeA: .12, dustCol: '#ffd6a8', dust: 140, grade: 'rgba(255,120,40,.08)', vig: .7, glowA: .75 });
 };
 
+
+
+
+// ================= added floors (B1 B2 B4 B5 B6 B8) =================
+// canon: every bed is a pod, every pod has a door with a name plate. Bed 0's is the only one latched from the inside.
+function trefoil(c, q, r, bg = P.amber, fg = '#1a170d') {
+  c.fillStyle = bg; c.beginPath(); c.arc(q[0], q[1], r, 0, 7); c.fill(); c.fillStyle = fg;
+  for (let k = 0; k < 3; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 3; c.beginPath(); c.moveTo(q[0], q[1]); c.arc(q[0], q[1], r * .86, a - .5, a + .5); c.fill(); }
+  c.fillStyle = bg; c.beginPath(); c.arc(q[0], q[1], r * .2, 0, 7); c.fill();
+}
+// a wall of pods: each bay is closed by its own door with a porthole and a blank name plate
+function podWall(phiA, phiB, ys, seed, opt = {}) {
+  const Rb = rng(seed), bayDeg = opt.bay || 9, h = opt.h || .74;
+  const n = Math.max(1, Math.round(Math.abs(phiB - phiA) / bayDeg)), step = (phiB - phiA) / n;
+  add(R + 6, c => {
+    for (let i = 0; i < n; i++) for (let yi = 0; yi < ys.length; yi++) {
+      const y = ys[yi], a0 = (phiA + step * i) * D2R, a1 = (phiA + step * (i + 1)) * D2R, g = .25 * D2R * Math.sign(step), span = a1 - a0;
+      const you = opt.you && opt.you[0] === i && opt.you[1] === yi, lit = !you && Rb() < (opt.litP ?? .35);
+      wallRect(c, a0, a1, y - .1, y + h + .08, .015, '#5f5b48', 'rgba(0,0,0,.35)', 1);
+      wallRect(c, a0 + g * 1.1, a1 - g * 1.1, y, y + h, .03, you ? '#6b6448' : '#4b4a3c', you ? P.gold : 'rgba(0,0,0,.45)', you ? 2 : 1);
+      wallRect(c, a0 + span * .62, a0 + span * .63, y + .03, y + h - .03, .034, 'rgba(0,0,0,.35)');
+      const m = a0 + span * .8, pc = y + h * .52;
+      wallDisc(c, m, pc, h * .17, .035, '#6f6a54');
+      wallDisc(c, m, pc, h * .13, .04, you ? P.gold : lit ? '#4a3a1e' : '#0b0c08');
+      if (lit) glow(...wallP(m, pc, .1), .35, '#FFD27A', .45);
+      wallRect(c, a0 + span * .14, a0 + span * .56, y + h * .52, y + h * .74, .036, '#14130c', you ? P.gold : hex(P.amber, .65), 1);
+      wallRect(c, a0 + span * .14, a0 + span * .56, y + h * .3, y + h * .48, .036, you ? P.gold : Rb() < .7 ? '#d9d3bd' : '#2c2c22');
+      wallRect(c, a0 + span * .18, a0 + span * .44, y + h * .6, y + h * .66, .037, you ? '#1a1206' : hex(P.amber, .8));
+      wallRect(c, a0 + g, a1 - g, y - .06, y + .02, .05, '#2a2b22');
+      if (you) { glow(...wallP((a0 + a1) / 2, y + h / 2, .1), 1.4, P.gold, .45); }
+    }
+  });
+  for (const y of ys) { const pts = []; for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 4) pts.push(wallP(a * D2R, y - .02, .06)); add(R + 5.9, c => line3(c, pts, P.green, .025, 'butt')); glowLine(pts, P.green, .16, .6); }
+}
+// a heavy closed round door on the wall (blast door / hatch)
+function vaultDisc(c, phi, yc, r, o = {}) {
+  const ph = phi * D2R, t = [Math.cos(ph), 0, -Math.sin(ph)];
+  wallDisc(c, ph, yc, r * 1.32, .01, '#2b2a20');
+  for (let i = 0; i < 32; i++) { const a0 = i / 32 * 2 * Math.PI, a1 = (i + 1) / 32 * 2 * Math.PI; const b = wallP(ph, yc, .015); const P4 = (a, rr) => [b[0] + t[0] * Math.cos(a) * rr, yc + Math.sin(a) * rr, b[2] + t[2] * Math.cos(a) * rr]; poly(c, [P4(a0, r * 1.18), P4(a1, r * 1.18), P4(a1, r * 1.3), P4(a0, r * 1.3)], i % 2 ? (o.ring || P.amber) : '#15130c'); }
+  wallDisc(c, ph, yc, r * 1.1, .03, o.rim || '#5e5d51', '#1c1b15', 3); wallDisc(c, ph, yc, r, .06, o.face || '#7a786a', '#2e2d24', 2); wallDisc(c, ph, yc, r * .8, .08, o.face2 || '#6a685b');
+  const b = wallP(ph, yc, .1);
+  for (let i = 0; i < 14; i++) { const a = i / 14 * 2 * Math.PI; const q = pj(b[0] + t[0] * Math.cos(a) * r * .9, yc + Math.sin(a) * r * .9, b[2] + t[2] * Math.cos(a) * r * .9); if (q) { c.fillStyle = '#3a392f'; c.beginPath(); c.arc(q[0], q[1], FOC * .05 / q[2], 0, 7); c.fill(); } }
+  const bw = wallP(ph, yc, .28), rim = []; for (let i = 0; i <= 28; i++) { const a = i / 28 * 2 * Math.PI; rim.push([bw[0] + t[0] * Math.cos(a) * r * .38, yc + Math.sin(a) * r * .38, bw[2] + t[2] * Math.cos(a) * r * .38]); }
+  if (o.wheel !== false) { line3(c, rim, o.wheelCol || '#b8902c', .08); for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI; line3(c, [[bw[0] - t[0] * Math.cos(a) * r * .38, yc - Math.sin(a) * r * .38, bw[2] - t[2] * Math.cos(a) * r * .38], [bw[0] + t[0] * Math.cos(a) * r * .38, yc + Math.sin(a) * r * .38, bw[2] + t[2] * Math.cos(a) * r * .38]], o.spokeCol || '#9c7a25', .05); } }
+}
+// a dashed hazard line on the floor, from the camera to the floor's vault door
+function walkway(phiDeg) {
+  const end = wallP(phiDeg * D2R, 0, 1.6), x0 = phiDeg > 0 ? .6 : -.6, z0 = -6.4, L = Math.hypot(end[0] - x0, end[2] - z0), ux = (end[0] - x0) / L, uz = (end[2] - z0) / L, nx = uz, nz = -ux;
+  add(30, c => { for (const off of [-.55, .55]) for (let d = 0; d < L - .2; d += .7) { const ax = x0 + ux * d + nx * off, az = z0 + uz * d + nz * off; poly(c, [[ax - nx * .05, .006, az - nz * .05], [ax + nx * .05, .006, az + nz * .05], [ax + nx * .05 + ux * .38, .006, az + nz * .05 + uz * .38], [ax - nx * .05 + ux * .38, .006, az - nz * .05 + uz * .38]], hex(P.amber, .75)); } });
+}
+function lampCage(x, z, col, a = 1, y = CEIL - .5) {
+  lamp(x, z, col, a, .16, y);
+  add(z - .01, c => { for (let i = 0; i < 4; i++) { const ang = i / 4 * Math.PI; line3(c, [[x + Math.cos(ang) * .28, y + .12, z + Math.sin(ang) * .28], [x + Math.cos(ang) * .22, y - .16, z + Math.sin(ang) * .22]], '#1b1a14', .02); } });
+}
+
+// ---------- B1: entry and decontamination ----------
+SCENES[1] = () => {
+  shell({ wall: '#55574e', floor: '#25272a', ceil: '#1a1c1d', marks: [-62, 62] });
+  // the main blast door: where everyone comes in. Closed, huge, on the left wall
+  add(R + 4, c => {
+    vaultDisc(c, -42, 2.0, 1.75);
+    // track rails on the floor in front of it
+    for (const off of [-.9, .9]) { const p0 = wallP(-42 * D2R, .01, .2), t = [Math.cos(-42 * D2R), 0, -Math.sin(-42 * D2R)]; line3(c, [[p0[0] + t[0] * off, .01, p0[2] + t[2] * off], [p0[0] * .7 + t[0] * off, .01, p0[2] * .7 + t[2] * off]], '#6f6a52', .05); }
+  });
+  glow(...wallP(-42 * D2R, 2, .4), 3.6, '#dfefff', .08);
+  dormDoor(40, 2.05, 1.6, 70, 11); walkway(40);
+  // decontamination showers: a pipe frame with three heads, foreground left, spray falling in the cold light
+  add(5.6, c => {
+    const x0 = -3.9, x1 = -1.3, z = -4.3, top = 2.9;
+    for (const x of [x0, x1]) { line3(c, [[x, 0, z], [x, top, z]], '#4c5154', .11); line3(c, [[x, 0, z], [x, top, z]], '#7c8589', .04); }
+    line3(c, [[x0, top, z], [x1, top, z]], '#4c5154', .11); line3(c, [[x0, top + .03, z], [x1, top + .03, z]], '#8a9397', .035);
+    for (const x of [-3.25, -2.6, -1.95]) { line3(c, [[x, top, z], [x, top - .25, z]], '#5c6468', .05); box(c, x, z, 0, .3, .3, .07, top - .32, '#8d979a'); }
+    // drain grates
+    for (const x of [-3.25, -1.95]) { disc(c, x, .006, z + .1, .35, '#161819', '#4c5154', 2, 24); for (let k = -2; k <= 2; k++) line3(c, [[x - .3, .008, z + .1 + k * .1], [x + .3, .008, z + .1 + k * .1]], '#3c4144', .015); }
+    // warning stripes on the floor around the shower bay
+    for (let i = 0; i < 12; i++) poly(c, [[x0 - .3 + i * .27, .007, z - .75], [x0 - .17 + i * .27, .007, z - .75], [x0 - .17 + i * .27, .007, z - .6], [x0 - .3 + i * .27, .007, z - .6]], i % 2 ? P.amber : '#15130c');
+  });
+  for (const x of [-3.25, -2.6, -1.95]) { glowLine([[x, 2.55, -4.3], [x - .1, .3, -4.3]], '#cfe6ff', .3, .18); glow(x, 1.4, -4.3, 1.2, '#bfe0ff', .08); }
+  add(6.6, c => { const z = -4.3; for (const x of [-3.25, -2.6, -1.95]) for (let k = 0; k < 9; k++) { const t = k / 8, xx = x - .12 + ((k * 37) % 7) / 25; line3(c, [[xx, 2.5 - t * .1, z], [xx - .05, .25 + ((k * 13) % 5) / 20, z]], 'rgba(210,230,255,.18)', .008); } });
+  // quarantine bunks behind plastic sheeting on the right
+  podWall(62, 108, [.25, 1.15, 2.05], 101, { litP: .15 });
+  // freestanding quarantine pods in the right foreground, behind a plastic curtain on a rail
+  for (const z of [-3.2, -.9]) add(Math.hypot(3.6 - CAM.x, z - CAM.z) + .4, c => {
+    const b = box(c, 3.6, z, -Math.PI / 2, 2.0, 1.0, 2.4, 0, '#4b4d48');
+    for (let t = 0; t < 3; t++) { const y = .12 + t * .78; poly(c, [b.P3(-.92, -.51, y), b.P3(.92, -.51, y), b.P3(.92, -.51, y + .68), b.P3(-.92, -.51, y + .68)], '#56584f', 'rgba(0,0,0,.45)', 1); line3(c, [b.P3(-.92, -.52, y - .02), b.P3(.92, -.52, y - .02)], P.green, .02); const q = pj(...b.P3(.55, -.52, y + .36)); if (q) { c.fillStyle = t === 1 && z > -2 ? '#4a3a1e' : '#0b0c08'; c.beginPath(); c.arc(q[0], q[1], FOC * .08 / q[2], 0, 7); c.fill(); } poly(c, [b.P3(-.75, -.52, y + .34), b.P3(.05, -.52, y + .34), b.P3(.05, -.52, y + .5), b.P3(-.75, -.52, y + .5)], '#14130c', hex(P.amber, .6), 1); }
+  });
+  add(4.2, c => { const x = 2.35; line3(c, [[x, 2.75, -4.6], [x, 2.75, .6]], '#3d4245', .05); for (let z = -4.6; z < .6; z += .45) { poly(c, [[x, .08, z], [x + (z * 7 % 2 ? .06 : -.06), .08, z + .45], [x, 2.72, z + .45], [x, 2.72, z]], 'rgba(220,232,236,.14)', 'rgba(235,244,248,.2)', 1); } });
+  glow(3.4, 1.4, -2, 3, '#e8f2ff', .08);
+  add(R + 2, c => {
+    for (let a = 58; a < 112; a += 4.5) { const p0 = wallP(a * D2R, 0, 1.3), p1 = wallP((a + 4.5) * D2R, 0, 1.3); poly(c, [[p0[0], .05, p0[2]], [p1[0], .05, p1[2]], [p1[0], 3.1, p1[2]], [p0[0], 3.1, p0[2]]], 'rgba(220,232,236,.13)', 'rgba(230,240,244,.22)', 1); }
+    const r0 = wallP(58 * D2R, 3.15, 1.3), r1 = wallP(112 * D2R, 3.15, 1.3); line3(c, [r0, r1], '#3d4245', .05);
+  });
+  // cold white work lamps
+  lampCage(-2.6, -4.3, '#e4f1ff', .8); lampCage(3.3, -2.2, '#e4f1ff', .6); lampCage(3.6, 1.8, '#e4f1ff', .6); lampCage(0, 6.5, '#d9ecff', .45);
+  glow(0, 2, 9, 8, '#cfe3ff', .1); glow(0, .3, 2, 9, '#d7e6f2', .06);
+  finish({ haze: '#b9c7cc', hazeA: .1, dustCol: '#e6f0f5', dust: 130, grade: 'rgba(150,190,225,.07)', vig: .66, glowA: .75 });
+};
+
+// ---------- B2: command and medical ----------
+SCENES[2] = () => {
+  shell({ wall: '#4f4e3e', floor: '#24251c', ceil: '#1a1a13', marks: [-66, 66] });
+  const R2b = rng(222);
+  // radio room along the left wall: consoles with dials, one blinking red light
+  add(R + 3, c => {
+    for (let a = -96; a <= -50; a += 9.5) {
+      const ph = a * D2R, x = Math.sin(ph) * (R - .9), z = Math.cos(ph) * (R - .9);
+      const b = box(c, x, z, ph, 1.45, .8, 1.05, 0, '#3e3d30');
+      box(c, x - Math.sin(ph) * .3, z - Math.cos(ph) * .3, ph, 1.45, .5, .9, 1.05, '#35342a');
+      for (let i = 0; i < 4; i++) { const p = b.P3(-.5 + i * .33, -.42, 1.45); const q = pj(...p); if (q) { const r = FOC * .07 / q[2]; c.fillStyle = '#1a1912'; c.beginPath(); c.arc(q[0], q[1], r * 1.2, 0, 7); c.fill(); c.fillStyle = i % 2 ? '#e2c27a' : '#9CF04A'; c.beginPath(); c.arc(q[0], q[1], r, 0, 7); c.fill(); c.strokeStyle = '#1a1912'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(q[0], q[1]); c.lineTo(q[0] + r * .8, q[1] - r * .5); c.stroke(); } }
+      for (let i = 0; i < 6; i++) { const p = b.P3(-.6 + i * .24, -.42, .82); const q = pj(...p); if (q) { const col = R2b() < .5 ? '#9CF04A' : '#ffbb4a'; c.fillStyle = col; c.fillRect(q[0] - 2, q[1] - 2, 4, 4); } }
+    }
+  });
+  for (let a = -96; a <= -50; a += 9.5) { const ph = a * D2R; glow(Math.sin(ph) * 8.9, 1.5, Math.cos(ph) * 8.9, 1.2, '#9CF04A', .12); }
+  { const ph = -68 * D2R; glow(Math.sin(ph) * 8.6, 2.2, Math.cos(ph) * 8.6, .5, P.red, 1); add(R + 2.9, c => { const q = pj(Math.sin(ph) * 8.6, 2.2, Math.cos(ph) * 8.6); if (q) { c.fillStyle = '#ff6a5a'; c.beginPath(); c.arc(q[0], q[1], FOC * .06 / q[2], 0, 7); c.fill(); } }); }
+  // the master counter on the wall: hazard-yellow segments (no legible number)
+  add(R + 4, c => { const ph = -30 * D2R; wallRect(c, ph - 7 * D2R, ph + 7 * D2R, 2.75, 3.45, .03, '#0f0f0a', '#6c6855', 2); for (let i = 0; i < 6; i++) { const a = ph - 6 * D2R + i * 2.1 * D2R; wallRect(c, a, a + 1.5 * D2R, 2.88, 3.32, .04, i === 5 ? hex(P.red, .9) : hex(P.amber, .9)); wallRect(c, a + .3 * D2R, a + 1.2 * D2R, 3.08, 3.12, .045, '#0f0f0a'); } });
+  glow(...wallP(-30 * D2R, 3.1, .3), 1.8, P.amber, .3);
+  // the periscope column dropping from the ceiling
+  add(Math.hypot(-3.4 - CAM.x, -1.2 - CAM.z), c => { cylY(c, -3.4, -1.2, .24, 1.35, CEIL - 1.35, '#5c5a4a', 18, { top: false }); box(c, -3.4, -1.45, 0, .6, .32, .32, 1.25, '#3a3a2e'); for (const s of [-1, 1]) line3(c, [[-3.4 + s * .22, 1.4, -1.5], [-3.4 + s * .6, 1.2, -1.6]], '#2a2a20', .05); line3(c, [[-3.4, CEIL, -1.2], [-3.4, CEIL - .05, -1.2]], '#111', .3); });
+  // blueprint table in the left foreground
+  add(3.4, c => {
+    const x = -2.5, z = -4.4, b = box(c, x, z, .3, 2.0, 1.1, .82, 0, '#3f3d30');
+    poly(c, [b.P3(-.85, -.4, .83), b.P3(.75, -.45, .83), b.P3(.8, .38, .83), b.P3(-.8, .42, .83)], '#5f86a8', 'rgba(255,255,255,.3)', 1);
+    for (let i = 0; i < 6; i++) line3(c, [b.P3(-.7 + i * .25, -.35, .835), b.P3(-.7 + i * .25, .35, .835)], 'rgba(220,235,255,.35)', .01);
+    for (let i = 0; i < 3; i++) line3(c, [b.P3(-.7, -.25 + i * .25, .835), b.P3(.7, -.25 + i * .25, .835)], 'rgba(220,235,255,.35)', .01);
+    for (const u of [.55, .75]) line3(c, [b.P3(u, -.4, .9), b.P3(u + .05, .35, .9)], '#b8c9d8', .09);
+  });
+  // med bay on the right: metal beds with white sheets and an IV stand
+  const bed = (x, z, yaw) => add(Math.hypot(x - CAM.x, z - CAM.z), c => {
+    const b = box(c, x, z, yaw, .9, 2.0, .08, .62, '#7c7f7a');
+    for (const [u, v] of [[-.4, -.95], [.4, -.95], [-.4, .95], [.4, .95]]) line3(c, [b.P3(u, v, 0), b.P3(u, v, .62)], '#9a9d96', .03);
+    box(c, x, z, yaw, .84, 1.94, .13, .7, '#e6e4da'); const pl = b.P3(0, .7, .83); box(c, pl[0], pl[2], yaw, .6, .35, .1, .83, '#f4f2ea');
+    box(c, b.P3(0, .3, 0)[0], b.P3(0, .3, 0)[2], yaw, .86, .8, .06, .83, '#6c8aa0');
+    line3(c, [b.P3(.6, -.7, 0), b.P3(.6, -.7, 1.8)], '#a9aca6', .025); box(c, b.P3(.6, -.7, 0)[0], b.P3(.6, -.7, 0)[2], yaw, .14, .05, .26, 1.5, '#cfe3e0');
+  });
+  bed(2.7, -4.6, -.15); bed(3.9, -2.4, -.35); bed(5.0, -.1, -.55); bed(6.0, 2.3, -.75);
+  dormDoor(40, 2.05, 1.6, 75, 22); walkway(40);
+  // pharmacy cabinet with a white cross
+  add(R + 4, c => { const ph = 74 * D2R; wallRect(c, ph - 5 * D2R, ph + 5 * D2R, 1.0, 2.9, .05, '#56604e', '#24271f', 2); wallRect(c, ph - 1.5 * D2R, ph + 1.5 * D2R, 2.3, 2.75, .07, '#f0efe6'); wallRect(c, ph - 3.6 * D2R, ph + 3.6 * D2R, 2.44, 2.61, .07, '#f0efe6'); for (const y of [1.5, 1.95]) wallRect(c, ph - 4.5 * D2R, ph + 4.5 * D2R, y, y + .04, .07, '#2a2d24'); });
+  lampCage(-2.5, -4.4, '#ffd27a', .7); lampCage(3.6, -2.6, '#e8f4ea', .7); lampCage(5.4, .8, '#e8f4ea', .5); lampCage(0, 7, '#ffd27a', .4);
+  glow(5, 1.2, 0, 6, '#dff2e6', .1); glow(-6, 1.6, 3, 6, '#9CF04A', .07); glow(0, 2, 9, 8, '#ffcf8a', .08);
+  finish({ haze: '#c9c09a', hazeA: .1, dustCol: '#efe6cc', dust: 130, grade: 'rgba(200,220,150,.05)', vig: .66, glowA: .75 });
+};
+
+// ---------- B4: commons and pantry ----------
+SCENES[4] = () => {
+  shell({ wall: '#57503c', floor: '#2b271d', ceil: '#211d16', marks: [-64, 64] });
+  const R4 = rng(404 * 3);
+  // the pantry: shelves floor to ceiling, tins in rows, on the right wall
+  add(R + 4, c => {
+    const A0 = 56, A1 = 116;
+    wallRect(c, A0 * D2R, A1 * D2R, .05, CEIL - .35, .02, '#2a251b');
+    for (let y = .15; y < CEIL - .6; y += .42) {
+      wallRect(c, A0 * D2R, A1 * D2R, y - .04, y, .3, '#6a5d43');
+      for (let a = A0 + .4; a < A1 - .8; a += 1.15) {
+        const col = ['#b8462e', '#c9c3ad', '#7a8f4a', '#d8a23a', '#9aa3a8', '#8a3a2a'][Math.floor(R4() * 6)];
+        if (R4() < .08) continue;
+        wallRect(c, a * D2R, (a + .9) * D2R, y, y + .3, .22, col, 'rgba(0,0,0,.35)', .8);
+        wallRect(c, a * D2R, (a + .9) * D2R, y + .1, y + .18, .225, mix(col, '#ffffff', .35));
+      }
+    }
+    for (let a = A0; a <= A1; a += 12) line3(c, [wallP(a * D2R, 0, .32), wallP(a * D2R, CEIL - .4, .32)], '#4b4231', .04);
+  });
+  // the kitchen pass on the left: counter, hood, pots, warm light
+  add(R + 3, c => {
+    for (let a = -100; a <= -58; a += 10.5) { const ph = a * D2R, x = Math.sin(ph) * (R - .8), z = Math.cos(ph) * (R - .8); const b = box(c, x, z, ph, 1.7, .9, .95, 0, '#6d6c62'); box(c, x, z, ph, 1.75, .95, .05, .95, '#9a988c'); for (const u of [-.45, .35]) { const p = b.P3(u, 0, 1.0); cylY(c, p[0], p[2], .2, 1.0, .3, u < 0 ? '#5f5e58' : '#7a5a3a', 14); } }
+    wallRect(c, -104 * D2R, -54 * D2R, 2.7, 3.2, .7, '#4c4a40', '#232219', 2);
+  });
+  for (let a = -100; a <= -58; a += 10.5) { const ph = a * D2R; glow(Math.sin(ph) * 8.9, 1.6, Math.cos(ph) * 8.9, 1.6, '#ffb060', .2); glow(Math.sin(ph) * 8.9, 2.0, Math.cos(ph) * 8.9, 1.2, '#f0e2c8', .08); }
+  dormDoor(-36, 2.0, 1.6, 70, 44); walkway(-36);
+  // the mess hall: long steel tables with benches, either side of the clear middle
+  for (const side of [-1, 1]) for (const z of [-4.3, -1.3, 1.8]) {
+    const x = side * 2.7; add(Math.hypot(x - CAM.x, z - CAM.z), c => {
+      const b = box(c, x, z, Math.PI / 2, 2.6, .9, .06, .76, '#8a8a80');
+      for (const [u, v] of [[-1.15, -.38], [1.15, -.38], [-1.15, .38], [1.15, .38]]) line3(c, [b.P3(u, v, 0), b.P3(u, v, .76)], '#5a5a52', .04);
+      for (const v of [-.75, .75]) { box(c, b.P3(0, v, 0)[0], b.P3(0, v, 0)[2], Math.PI / 2, 2.4, .3, .05, .44, '#6a6a60'); }
+      for (let i = 0; i < 4; i++) { const p = b.P3(-.9 + i * .6, (i % 2 ? .2 : -.2), .82); cylY(c, p[0], p[2], .07, .82, .12, i % 2 ? '#c9c3ad' : '#b8462e', 10); }
+    });
+  }
+  // a freestanding pantry rack, tins floor to ceiling, right foreground
+  add(Math.hypot(4.8 - CAM.x, -3.6 - CAM.z), c => {
+    const b = box(c, 4.8, -3.6, -Math.PI / 2 + .25, 2.4, .7, CEIL - .5, 0, '#3a3226');
+    for (let y = .2; y < CEIL - .7; y += .42) { poly(c, [b.P3(-1.15, -.36, y - .04), b.P3(1.15, -.36, y - .04), b.P3(1.15, -.36, y), b.P3(-1.15, -.36, y)], '#7a6a4a'); for (let u = -1.05; u < 1.05; u += .17) { if (R4() < .1) continue; const col = ['#b8462e', '#c9c3ad', '#7a8f4a', '#d8a23a', '#9aa3a8', '#8a3a2a'][Math.floor(R4() * 6)]; poly(c, [b.P3(u, -.37, y), b.P3(u + .13, -.37, y), b.P3(u + .13, -.37, y + .3), b.P3(u, -.37, y + .3)], col, 'rgba(0,0,0,.35)', .8); poly(c, [b.P3(u, -.375, y + .1), b.P3(u + .13, -.375, y + .1), b.P3(u + .13, -.375, y + .18), b.P3(u, -.375, y + .18)], mix(col, '#ffffff', .35)); } }
+  });
+  // a soccer ball on the commons floor
+  add(2.4, c => { const q = pj(.7, .16, -4.9); if (!q) return; const r = FOC * .16 / q[2]; c.fillStyle = '#e8e4d8'; c.beginPath(); c.arc(q[0], q[1], r, 0, 7); c.fill(); c.fillStyle = '#26241d'; for (const [dx, dy, s] of [[0, 0, .32], [-.6, -.35, .22], [.6, -.35, .22], [-.45, .55, .2], [.45, .55, .2]]) { c.beginPath(); c.arc(q[0] + dx * r, q[1] + dy * r, r * s, 0, 7); c.fill(); } c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(q[0], q[1] + r * 1.05, r * 1.1, r * .25, 0, 0, 7); c.fill(); });
+  // the library corner: a bookshelf and a box of old film reels
+  add(R + 3.5, c => {
+    const ph = -112 * D2R; wallRect(c, ph - 5 * D2R, ph + 5 * D2R, .1, 2.6, .25, '#4a3a28', '#221a10', 2);
+    for (let y = .2; y < 2.5; y += .5) for (let a = -116.5; a < -107.8; a += .7) wallRect(c, a * D2R, (a + .55) * D2R, y, y + .32 + R4() * .08, .3, ['#7a3a2a', '#3d5a6a', '#8a7a3a', '#4a6a3a', '#6a4a6a'][Math.floor(R4() * 5)]);
+  });
+  add(4.5, c => { const x = -2.0, z = -4.2; box(c, x, z, .4, .7, .5, .38, 0, '#6e5a3a'); for (let i = 0; i < 3; i++) { const q = pj(x - .15 + i * .15, .42 + i * .02, z); if (q) { const r = FOC * .16 / q[2]; c.fillStyle = '#2a2a24'; c.beginPath(); c.ellipse(q[0], q[1], r, r * .35, 0, 0, 7); c.fill(); c.strokeStyle = '#8a8a80'; c.lineWidth = 1; c.stroke(); } } });
+  lampCage(-2.7, -2.8, '#ffcf8a', .75); lampCage(2.7, -2.8, '#ffcf8a', .75); lampCage(-2.7, 1.8, '#ffcf8a', .6); lampCage(0, 6.8, '#ffd9a0', .5); lampCage(-3.4, 3.6, '#ffcf8a', .5);
+  glow(6.5, 1.8, 4, 6, '#ffd7a0', .1); glow(0, .3, 1, 9, '#ffb878', .08); glow(0, 2, 9, 8, '#ffcf8a', .1);
+  finish({ haze: '#d9b88a', hazeA: .1, dustCol: '#f2e2c4', dust: 140, grade: 'rgba(255,190,120,.06)', vig: .64, glowA: .75 });
+};
+
+// ---------- B5: main dormitory ----------
+SCENES[5] = () => {
+  shell({ wall: '#4e4b3a', floor: '#24251b', ceil: '#191a12', marks: [-70, 70] });
+  const ys = [.2, 1.05, 1.9, 2.75];
+  podWall(-118, -48, ys, 501);
+  glow(-2.0, 1.3, -1.6, 1.4, P.gold, .5);
+  podWall(-12, 12, ys, 503, { litP: .25 });
+  podWall(48, 118, ys, 502);
+  dormDoor(-28, 2.05, 1.5, 70, 55);
+  dormDoor(28, 2.05, 1.5, 70, 56);
+  // freestanding pod blocks in rows, curving with the room
+  for (const side of [-1, 1]) for (const z of [-4.4, -1.6, 1.2, 4.0]) {
+    const x = side * 2.5;
+    add(Math.hypot(x - CAM.x, z - CAM.z), c => {
+      const b = box(c, x, z, side * Math.PI / 2, 2.4, 1.0, 2.5, 0, '#4b4a3c');
+      for (let t = 0; t < 3; t++) { const y = .15 + t * .8, you = side < 0 && z === -1.6 && t === 1; poly(c, [b.P3(-1.1, -.51, y), b.P3(1.1, -.51, y), b.P3(1.1, -.51, y + .7), b.P3(-1.1, -.51, y + .7)], you ? '#6b6448' : '#4f4e40', you ? P.gold : 'rgba(0,0,0,.45)', you ? 2 : 1); line3(c, [b.P3(-1.1, -.52, y - .02), b.P3(1.1, -.52, y - .02)], P.green, .02); const q = pj(...b.P3(.7, -.52, y + .38)); if (q) { c.fillStyle = '#0b0c08'; c.beginPath(); c.arc(q[0], q[1], FOC * .08 / q[2], 0, 7); c.fill(); } poly(c, [b.P3(-.75, -.52, y + .35), b.P3(.1, -.52, y + .35), b.P3(.1, -.52, y + .5), b.P3(-.75, -.52, y + .5)], '#14130c', hex(P.amber, .6), 1); }
+    });
+  }
+  // the dashed amber walkway rings on the floor, and reading lamps glowing
+  lampCage(0, -3, '#ffd27a', .6); lampCage(0, 1.5, '#ffd27a', .5); lampCage(0, 6, '#ffd27a', .4);
+  glow(0, 2, 9, 9, '#ffd27a', .08); glow(-6, 1.5, 2, 6, '#9CF04A', .05); glow(6, 1.5, 2, 6, '#9CF04A', .05);
+  finish({ haze: '#c8c09a', hazeA: .09, dustCol: '#e8dcc0', dust: 130, vig: .68, glowA: .8 });
+};
+
+// ---------- B6: the armory (guards' floor) ----------
+SCENES[6] = () => {
+  shell({ wall: '#4d4a3a', floor: '#23231b', ceil: '#1a1912', marks: [-66, 66] });
+  const R6 = rng(606);
+  // rifle racks behind wire mesh on the left wall (racked, nothing pointed anywhere)
+  add(R + 4, c => {
+    const A0 = -100, A1 = -48;
+    wallRect(c, A0 * D2R, A1 * D2R, .4, 3.2, .05, '#2a2a21', '#141410', 2);
+    for (const y of [.75, 1.95]) {
+      wallRect(c, A0 * D2R, A1 * D2R, y - .08, y, .2, '#5a4a30');
+      for (let a = A0 + 1.5; a < A1 - 1; a += 2.2) { const ph = a * D2R; line3(c, [wallP(ph, y, .18), wallP(ph + .15 * D2R, y + 1.0, .14)], '#1c1c18', .06); line3(c, [wallP(ph, y, .2), wallP(ph, y + .3, .19)], '#5a3e24', .09); }
+    }
+    for (let a = A0; a <= A1; a += 1.4) line3(c, [wallP(a * D2R, .4, .45), wallP(a * D2R, 3.2, .45)], 'rgba(150,150,130,.28)', .01);
+    for (let y = .4; y <= 3.2; y += .18) { const pts = []; for (let a = A0; a <= A1; a += 2) pts.push(wallP(a * D2R, y, .45)); line3(c, pts, 'rgba(150,150,130,.22)', .008); }
+    for (let a = A0; a <= A1; a += 13) line3(c, [wallP(a * D2R, .4, .46), wallP(a * D2R, 3.2, .46)], '#5d5a48', .05);
+  });
+  // ammo crates stacked on the left floor
+  for (const [x, z, n] of [[-3.6, -2.2, 3], [-2.3, -4.4, 2], [-4.8, .4, 3]]) add(Math.hypot(x - CAM.x, z - CAM.z), c => { for (let i = 0; i < n; i++) { const b = box(c, x + (i % 2) * .08, z, .2 + i * .1, 1.1, .7, .45, i * .45, '#4f5a33'); poly(c, [b.P3(-.3, -.36, i * .45 + .15), b.P3(.3, -.36, i * .45 + .15), b.P3(.3, -.36, i * .45 + .3), b.P3(-.3, -.36, i * .45 + .3)], hex(P.amber, .85)); } });
+  // the security office window on the right, lit by monitors
+  add(R + 4, c => {
+    const ph = 72 * D2R; wallRect(c, ph - 12 * D2R, ph + 12 * D2R, 1.1, 2.6, .02, '#22231d', '#5f5b48', 4);
+    wallRect(c, ph - 11 * D2R, ph + 11 * D2R, 1.2, 2.5, .08, '#1d2a2c');
+    for (let i = 0; i < 4; i++) wallRect(c, ph - 9 * D2R + i * 4.6 * D2R, ph - 5.5 * D2R + i * 4.6 * D2R, 1.55, 2.05, .3, ['#5fa8b0', '#79c08a', '#5f8ab0', '#8ab06a'][i]);
+    wallRect(c, ph - 12 * D2R, ph + 12 * D2R, 1.0, 1.1, .02, '#5f5b48');
+  });
+  glow(...wallP(72 * D2R, 1.8, .5), 3, '#8fd0d8', .18);
+  dormDoor(38, 2.05, 1.6, 70, 66); walkway(38);
+  // boots lined up by the door
+  add(5.5, c => { for (let i = 0; i < 6; i++) { const base = wallP((26 + i * 2.1) * D2R, 0, 1.0); for (const s of [0, .15]) box(c, base[0] + s, base[2], .4, .14, .32, .3, 0, i % 3 === 1 ? '#3a3124' : '#2a261e'); } });
+  // three dog beds with leashes hanging above on the right wall
+  for (const [x, z] of [[2.2, -4.7], [3.4, -3.6], [4.4, -2.2]]) add(Math.hypot(x - CAM.x, z - CAM.z), c => { disc(c, x, .02, z, .62, '#5a4030', 'rgba(0,0,0,.4)', 1, 30); disc(c, x, .14, z, .5, '#7a5a40', null, 1, 30); disc(c, x, .16, z, .38, '#9a7656', null, 1, 30); });
+  add(R + 3.8, c => { for (let i = 0; i < 3; i++) { const ph = (96 + i * 5) * D2R; const top = wallP(ph, 2.4, .08); line3(c, [top, wallP(ph + 1.2 * D2R, 1.9, .1), wallP(ph + .4 * D2R, 1.5, .1)], ['#b8462e', '#3d6a9a', '#d8a23a'][i], .03); const q = pj(...top); if (q) { c.fillStyle = '#8a8670'; c.beginPath(); c.arc(q[0], q[1], FOC * .03 / q[2], 0, 7); c.fill(); } } });
+  // a few pods for the guards past the office
+  podWall(98, 120, [.25, 1.1, 1.95], 606, { bay: 7, litP: .4 });
+  // caged work lamps, swinging slightly
+  lampCage(-2.8, -3.2, '#ffb35a', .9); lampCage(3.2, -3.0, '#ffb35a', .75); lampCage(-1.5, 5.5, '#ffcf8a', .5); lampCage(2.5, 5.0, '#ffb35a', .5);
+  glow(-5, 1.6, 0, 6, '#ffb35a', .1); glow(0, 2, 9, 8, '#ffcf8a', .08);
+  finish({ haze: '#cbb28a', hazeA: .1, dustCol: '#eadcc0', dust: 140, grade: 'rgba(255,170,90,.05)', vig: .7, glowA: .78 });
+};
+
+// ---------- B8: the floor that doesn't exist ----------
+SCENES[8] = () => {
+  CAM.z = 1.2; CAM.y = 1.5;   // closer: a bare dead end, nothing between you and the door
+  shell({ wall: '#2a2620', floor: '#141210', ceil: '#0c0b09', ring: false, marks: [] });
+  // the room is almost black: darken everything
+  ctx.fillStyle = 'rgba(0,0,0,.62)'; ctx.fillRect(0, 0, W, H);
+  const R8 = rng(808);
+  // scratch marks on the walls
+  add(R + 5, c => { for (let i = 0; i < 70; i++) { const a = (R8() * 200 - 100) * D2R, y = .3 + R8() * 2.6; const n = 3 + Math.floor(R8() * 2); for (let k = 0; k < n; k++) line3(c, [wallP(a + k * .35 * D2R, y, .02), wallP(a + (k * .35 + .6) * D2R, y - .5 - R8() * .4, .02)], 'rgba(160,140,120,.22)', .012); } });
+  // the one door: a round hatch, latched from the inside, red light leaking at the seam
+  add(R + 3, c => {
+    vaultDisc(c, 0, 1.9, 1.8, { ring: '#5a1a16', rim: '#3a3630', face: '#4a4640', face2: '#403c36', wheel: false });
+    const ph = 0, t = [1, 0, 0], b = wallP(ph, 1.9, .12);
+    line3(c, [[b[0] - 1.5, 1.9, b[2] - .1], [b[0] + 1.5, 1.9, b[2] - .1]], '#26231e', .2);
+    for (const xx of [-1.5, 1.5]) box(c, b[0] + xx, b[2] - .15, 0, .26, .14, .45, 1.68, '#2e2a24');
+    // the stencilled 0 above it, worn and partly scraped off
+    const cy = 3.95; for (let i = 0; i < 24; i++) { if (i % 7 === 3 || i === 11 || i === 12) continue; const a0 = i / 24 * 2 * Math.PI, a1 = (i + .8) / 24 * 2 * Math.PI; poly(c, [[Math.cos(a0) * .3, cy + Math.sin(a0) * .42, R - .03], [Math.cos(a1) * .3, cy + Math.sin(a1) * .42, R - .03], [Math.cos(a1) * .2, cy + Math.sin(a1) * .3, R - .03], [Math.cos(a0) * .2, cy + Math.sin(a0) * .3, R - .03]], 'rgba(242,194,48,.38)'); }
+  });
+  { const seam = []; for (let i = 0; i <= 64; i++) { const a = i / 64 * 2 * Math.PI; seam.push([Math.cos(a) * 1.82, 1.9 + Math.sin(a) * 1.82, R - .08]); } glowLine(seam, '#ff3b3b', .09, .9); add(R + 2.9, c => line3(c, seam, 'rgba(255,80,60,.8)', .015)); }
+  glow(0, 1.9, R - .3, 6, '#ff2a1a', .22); glow(0, .1, R - 2, 6, '#ff2a1a', .1);
+  // one dim red emergency lamp
+  glow(-5, CEIL - .6, 4, 2.2, '#ff3b3b', .5); glow(5, CEIL - .6, 4, 2.2, '#ff3b3b', .35);
+  window.DOOR = (() => { const q = pj(0, 1.9, R - .1); return q ? [q[0] / W, q[1] / H, .1] : null; })();
+  finish({ haze: '#7a2a20', hazeA: .1, dustCol: '#d8b0a0', dust: 170, grade: 'rgba(255,40,20,.08)', vig: .86, glowA: .9 });
+};
+
 // ---------- the dormitory hallway (same corridor behind every floor's door; only the plates change) ----------
 // ?f=h  &plates=[["BED 48,143","@survivor_77"],...] (JSON; one per pod: index = (cell*2 + side)*3 + tier, side 0 left/1 right, tier 0 bottom..2 top)  &blank=1  &you=INDEX
 SCENES.h = async () => {
