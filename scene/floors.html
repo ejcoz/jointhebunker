@@ -19,7 +19,7 @@ const mix = (a, b, t) => { a = full(a); b = full(b); const p = x => [parseInt(x.
 
 // ---------- camera ----------
 const CAM = { x: 0, y: 1.65, z: -7.2 }; let FOC = W * .555, HZ = H * .42;
-const R = 10, CEIL = 4.4;
+const R = 10; let CEIL = 4.4;   // CEIL can be raised per floor (B5 is a towering atrium)
 function pj(x, y, z) { const d = z - CAM.z; if (d < .15) return null; return [W / 2 + FOC * (x - CAM.x) / d, HZ - FOC * (y - CAM.y) / d, d]; }
 const wallP = (phi, y, ins = 0) => [(R - ins) * Math.sin(phi), y, (R - ins) * Math.cos(phi)];
 const D2R = Math.PI / 180;
@@ -410,17 +410,20 @@ function hatchWall(phiA, phiB, ys, seed, opt = {}) {
       wallRect(c, m - span * .18, m + span * .18, y + h * .66, y + h * .8, .04, you ? '#ffcf4a' : lit ? '#6a4a22' : '#090a07');
       wallRect(c, m - span * .3, m + span * .3, y + h * .58, y + h * .61, .04, 'rgba(0,0,0,.4)');
       wallDisc(c, m, y + h * .36, half * .55, .045, null, you ? P.gold : '#8a6a3a', 1.4);
-      if (lit) glow(...wallP(m, y + h * .73, .15), .45, '#ffc880', .35);
+      if (h > 1.4) { for (let k = 0; k < 9; k++) { const t = k / 8, yy = y + half + t * (h - 2 * half); for (const s2 of [-1, 1]) { const q = pj(...wallP(m + s2 * span * .25, yy, .04)); if (q) { c.fillStyle = '#7a7058'; c.beginPath(); c.arc(q[0], q[1], Math.max(.7, FOC * .018 / q[2]), 0, 7); c.fill(); } } }
+        for (let k = 0; k < 4; k++) wallRect(c, m - span * .18 + k * span * .1, m - span * .13 + k * span * .1, y + .1, y + .34, .04, '#141410');
+        wallRect(c, m - span * .14, m + span * .14, y + h + .12, y + h + .24, .02, you ? P.gold : hex(P.amber, .45)); }
+      if (lit) glow(...wallP(m, y + h * .73, .15), h > 1.4 ? .8 : .45, '#ffc880', .35);
       if (you) glow(...wallP(m, y + h / 2, .2), 1.3, P.gold, .5);
     }
     // catwalks with railings in front of the upper tiers, and ladders
     for (let yi = 1; yi < ys.length; yi++) {
-      const y = ys[yi] - .1, deck = [], rail = [], top = [];
-      for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 3) { deck.push(wallP(a * D2R, y, .55)); rail.push(wallP(a * D2R, y + .55, .55)); top.push(wallP(a * D2R, y + .02, .05)); }
-      line3(c, deck, '#3a382e', .1, 'butt'); line3(c, top, '#2a291f', .05, 'butt'); line3(c, rail, '#5f5b48', .025);
-      for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step) line3(c, [wallP(a * D2R, y, .55), wallP(a * D2R, y + .55, .55)], '#5f5b48', .02);
+      const y = ys[yi] - .1, rh = Math.min(1.0, h * .5), deck = [], rail = [], top = [];
+      for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 3) { deck.push(wallP(a * D2R, y, .7)); rail.push(wallP(a * D2R, y + rh, .7)); top.push(wallP(a * D2R, y + .02, .05)); }
+      line3(c, deck, '#3a382e', .16, 'butt'); line3(c, top, '#2a291f', .05, 'butt'); line3(c, rail, '#5f5b48', .025);
+      for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 2) line3(c, [wallP(a * D2R, y, .7), wallP(a * D2R, y + rh, .7)], '#5f5b48', .025);
     }
-    for (let k = 0; k < 3; k++) { const a = (phiA + (phiB - phiA) * (.2 + k * .3)) * D2R; line3(c, [wallP(a - .3 * D2R, 0, .5), wallP(a - .3 * D2R, ys[ys.length - 1], .5)], '#6b6650', .025); line3(c, [wallP(a + .3 * D2R, 0, .5), wallP(a + .3 * D2R, ys[ys.length - 1], .5)], '#6b6650', .025); for (let y = .2; y < ys[ys.length - 1]; y += .28) line3(c, [wallP(a - .3 * D2R, y, .5), wallP(a + .3 * D2R, y, .5)], '#6b6650', .018); }
+    for (let k = 0; k < 3; k++) { if (ys.length < 2) break; const a = (phiA + (phiB - phiA) * (.2 + k * .3)) * D2R; line3(c, [wallP(a - .35 * D2R, 0, .65), wallP(a - .35 * D2R, ys[ys.length - 1], .65)], '#6b6650', .03); line3(c, [wallP(a + .35 * D2R, 0, .65), wallP(a + .35 * D2R, ys[ys.length - 1], .65)], '#6b6650', .03); for (let y = .25; y < ys[ys.length - 1]; y += .32) line3(c, [wallP(a - .35 * D2R, y, .65), wallP(a + .35 * D2R, y, .65)], '#6b6650', .02); }
   });
   for (const y of ys) { const pts = []; for (let a = phiA; Math.sign(step) * (phiB - a) >= -1e-6; a += step / 3) pts.push(wallP(a * D2R, y - .05, .07)); add(R + 5.9, c => line3(c, pts, P.green, .02, 'butt')); glowLine(pts, P.green, .14, .5); }
 }
@@ -518,7 +521,7 @@ SCENES[1] = () => {
   add(6.6, c => { const z = -4.3; for (const x of [-3.25, -2.6, -1.95]) for (let k = 0; k < 9; k++) { const t = k / 8, xx = x - .12 + ((k * 37) % 7) / 25; line3(c, [[xx, 2.5 - t * .1, z], [xx - .05, .25 + ((k * 13) % 5) / 20, z]], 'rgba(210,230,255,.18)', .008); } });
   // quarantine bunks behind plastic sheeting on the right
   // quarantine hatches on the right wall, behind a hazard line; the decontamination scanner arch over the walkway
-  hatchWall(58, 112, [.15, 1.05, 1.95], 101, { litP: .15 });
+  hatchWall(58, 112, [.1], 101, { litP: .15, h: 2.15, bay: 8.5 });
   add(29, c => { const pts = []; for (let a = 56; a <= 114; a += 2) pts.push(wallP(a * D2R, .006, 1.7)); for (let i = 0; i < pts.length - 1; i++) line3(c, [pts[i], pts[i + 1]], i % 2 ? P.amber : '#15130c', .12, 'butt'); });
   scannerArch(1.85, -3.0, -.36);
   for (const [x, z] of [[3.6, -1.2], [4.4, .8]]) add(dist(x, z), c => { box(c, x, z, -.9, 1.6, .4, .42, 0, '#5a6064'); });
@@ -668,19 +671,20 @@ SCENES[4] = () => {
 
 // ---------- B5: main dormitory ----------
 SCENES[5] = () => {
-  CAM.z = 2.6; CAM.y = 1.75; FOC = W * .4;   // stand in the middle of the dormitory: the hatch walls tower round you
+  CEIL = 9.6; CAM.z = 2.6; CAM.y = 1.75; FOC = W * .4; HZ = H * .5;   // stand in the middle of the dormitory: the hatch walls tower round you
   shell({ wall: '#4e4b3a', floor: '#24251b', ceil: '#191a12', marks: [-70, 70], ring: false });
   // the mass view: hatches in four tiers curving round the whole room, catwalks between them
-  const ys = [.1, .98, 1.86, 2.74, 3.62];
-  hatchWall(-128, -11, ys, 501, { you: [9, 1], bay: 5.2 });
-  hatchWall(11, 128, ys, 502, { bay: 5.2 });
-  dormDoor(0, 2.05, 1.55, 70, 55);
+  const ys = [.1, 2.95, 5.8];
+  hatchWall(-128, -12, ys, 501, { you: [6, 1], bay: 8.2, h: 2.25 });
+  hatchWall(12, 128, ys, 502, { bay: 8.2, h: 2.25 });
+  dormDoor(0, 2.5, 2.3, 70, 55);
   // the floor: everyone's things, bedrolls, lanterns, laundry
   belongings(505, { n: 30, x0: -4.6, x1: 4.6, z0: 4.0, z1: 8.2 });
   for (const z of [5.0, 7.2]) { const pts = []; for (let t = 0; t <= 1.0001; t += .05) pts.push([-4.5 + 9 * t, 2.9 - .45 * 4 * t * (1 - t), z]); add(dist(0, z) - .3, c => { line3(c, pts, '#d8d0b4', .012); const Rl = rng(Math.round(z * 10) + 500); for (let i = 1; i < 12; i++) { const t = i / 12 + (Rl() - .5) * .03, x = -4.5 + 9 * t, y = 2.9 - .45 * 4 * t * (1 - t), w = .14 + Rl() * .12, h = .28 + Rl() * .3; if (Rl() < .25 || Math.abs(x) < 1.6) continue; poly(c, [[x - w, y, z], [x + w, y, z], [x + w * .9, y - h, z], [x - w * .9, y - h, z]], ['#7a3a2a', '#3d5a6a', '#c9c3ad', '#5d6e45', '#8a7a3a', '#5a4a6a'][Math.floor(Rl() * 6)], 'rgba(0,0,0,.25)', 1); } }); }
   add(dist(1.4, 4.4), c => { const q = pj(1.4, .55, 4.4), q2 = pj(1.55, 1.2, 4.45); if (!q || !q2) return; const s = FOC / q[2]; c.fillStyle = '#8a5a2a'; c.beginPath(); c.ellipse(q[0], q[1], s * .2, s * .26, -.2, 0, 7); c.fill(); c.fillStyle = '#1a120a'; c.beginPath(); c.arc(q[0], q[1] - s * .05, s * .06, 0, 7); c.fill(); c.strokeStyle = '#5a3a1a'; c.lineWidth = s * .05; c.beginPath(); c.moveTo(q[0], q[1] - s * .2); c.lineTo(q2[0], q2[1]); c.stroke(); });
   add(dist(-1.0, 4.1), c => { const q = pj(-1.0, .14, 4.1); if (!q) return; const r = FOC * .14 / q[2]; c.fillStyle = '#e8e4d8'; c.beginPath(); c.arc(q[0], q[1], r, 0, 7); c.fill(); c.fillStyle = '#26241d'; for (const [dx, dy, s] of [[0, 0, .32], [-.6, -.35, .22], [.6, -.35, .22]]) { c.beginPath(); c.arc(q[0] + dx * r, q[1] + dy * r, r * s, 0, 7); c.fill(); } });
-  lampCage(-2.2, 5.2, '#ffd27a', .6); lampCage(2.2, 5.2, '#ffd27a', .6);
+  lampCage(-2.2, 5.2, '#ffd27a', .6, 4.2); lampCage(2.2, 5.2, '#ffd27a', .6, 4.2); lampCage(0, 8.2, '#ffd27a', .5, 7.5);
+  for (const [x, z] of [[-4, 8], [4, 8], [0, 9.2]]) glow(x, 7.8, z, 3.5, '#ffd27a', .12);
   glow(0, 2, 9, 9, '#ffd27a', .08); glow(-6, 1.5, 2, 6, '#9CF04A', .05); glow(6, 1.5, 2, 6, '#9CF04A', .05);
   cables(52, 4); ceilingPipes(51, 2);
   puddle(.3, 5.4, .5);
@@ -720,7 +724,7 @@ SCENES[6] = () => {
   for (const [x, z] of [[-2.1, -4.3], [.15, -4.75], [2.3, -2.6]]) add(Math.hypot(x - CAM.x, z - CAM.z), c => { disc(c, x, .02, z, .62, '#5a4030', 'rgba(0,0,0,.4)', 1, 30); disc(c, x, .14, z, .5, '#7a5a40', null, 1, 30); disc(c, x, .16, z, .38, '#9a7656', null, 1, 30); });
   add(R + 3.8, c => { for (let i = 0; i < 3; i++) { const ph = (96 + i * 5) * D2R; const top = wallP(ph, 2.4, .08); line3(c, [top, wallP(ph + 1.2 * D2R, 1.9, .1), wallP(ph + .4 * D2R, 1.5, .1)], ['#b8462e', '#3d6a9a', '#d8a23a'][i], .03); const q = pj(...top); if (q) { c.fillStyle = '#8a8670'; c.beginPath(); c.arc(q[0], q[1], FOC * .03 / q[2], 0, 7); c.fill(); } } });
   // a few pods for the guards past the office
-  podWall(98, 120, [.25, 1.1, 1.95], 606, { bay: 7, litP: .4 });
+  hatchWall(96, 124, [.1], 606, { litP: .4, h: 2.15, bay: 8.5 });
   // caged work lamps, swinging slightly
   lampCage(-2.8, -3.2, '#ffb35a', .9); lampCage(3.2, -3.0, '#ffb35a', .75); lampCage(-1.5, 5.5, '#ffcf8a', .5); lampCage(2.5, 5.0, '#ffb35a', .5);
   glow(-5, 1.6, 0, 6, '#ffb35a', .1); glow(0, 2, 9, 8, '#ffcf8a', .08);
