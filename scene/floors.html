@@ -317,7 +317,7 @@ function podWall(phiA, phiB, ys, seed, opt = {}) {
       const you = opt.you && opt.you[0] === i && opt.you[1] === yi, lit = !you && Rb() < (opt.litP ?? .35);
       // episode 1 door: a thick pale frame, a dark opening, the bed number above (a hazard-yellow tick at this distance)
       wallRect(c, a0 + g * .6, a1 - g * .6, y - .08, y + h + .02, .02, '#c9c4a8', 'rgba(0,0,0,.4)', 1);
-      wallRect(c, a0 + g * 2.6, a1 - g * 2.6, y + .02, y + h - .1, .035, you ? '#ffcf3a' : lit ? '#2a2414' : '#0b0c09');
+      wallRect(c, a0 + g * 2.6, a1 - g * 2.6, y + .02, y + h - .1, .035, you ? '#ffcf3a' : lit ? '#4a4b40' : '#2b2c26'); wallRect(c, a0 + g * 3.2, a1 - g * 3.2, y + h * .5, y + h * .58, .036, 'rgba(239,234,219,.4)');
       if (lit) glow(...wallP((a0 + a1) / 2, y + h * .45, .1), .5, '#FFD27A', .3);
       wallRect(c, a0 + span * .3, a1 - span * .3, y + h + .07, y + h + .13, .03, you ? P.gold : hex(P.amber, .55));
       if (you) { glow(...wallP((a0 + a1) / 2, y + h / 2, .1), 1.4, P.gold, .45); }
@@ -375,7 +375,7 @@ SCENES[1] = () => {
   // freestanding quarantine pods in the right foreground, behind a plastic curtain on a rail
   for (const z of [-3.2, -.9]) add(Math.hypot(3.6 - CAM.x, z - CAM.z) + .4, c => {
     const b = box(c, 3.6, z, -Math.PI / 2, 2.0, 1.0, 2.4, 0, '#4b4d48');
-    for (let t = 0; t < 3; t++) { const y = .12 + t * .78; for (const u of [-.45, .45]) { poly(c, [b.P3(u - .38, -.51, y), b.P3(u + .38, -.51, y), b.P3(u + .38, -.51, y + .68), b.P3(u - .38, -.51, y + .68)], '#c9c4a8', 'rgba(0,0,0,.4)', 1); poly(c, [b.P3(u - .28, -.515, y + .08), b.P3(u + .28, -.515, y + .08), b.P3(u + .28, -.515, y + .6), b.P3(u - .28, -.515, y + .6)], '#0b0c09'); } line3(c, [b.P3(-.92, -.52, y - .02), b.P3(.92, -.52, y - .02)], P.green, .02); }
+    for (let t = 0; t < 3; t++) { const y = .12 + t * .78; for (const u of [-.45, .45]) { poly(c, [b.P3(u - .38, -.51, y), b.P3(u + .38, -.51, y), b.P3(u + .38, -.51, y + .68), b.P3(u - .38, -.51, y + .68)], '#c9c4a8', 'rgba(0,0,0,.4)', 1); poly(c, [b.P3(u - .28, -.515, y + .08), b.P3(u + .28, -.515, y + .08), b.P3(u + .28, -.515, y + .6), b.P3(u - .28, -.515, y + .6)], '#3a3b33'); poly(c, [b.P3(u - .24, -.517, y + .36), b.P3(u + .24, -.517, y + .36), b.P3(u + .24, -.517, y + .41), b.P3(u - .24, -.517, y + .41)], 'rgba(239,234,219,.4)'); } line3(c, [b.P3(-.92, -.52, y - .02), b.P3(.92, -.52, y - .02)], P.green, .02); }
   });
   add(4.2, c => { const x = 2.35; line3(c, [[x, 2.75, -4.6], [x, 2.75, .6]], '#3d4245', .05); for (let z = -4.6; z < .6; z += .45) { poly(c, [[x, .08, z], [x + (z * 7 % 2 ? .06 : -.06), .08, z + .45], [x, 2.72, z + .45], [x, 2.72, z]], 'rgba(220,232,236,.14)', 'rgba(235,244,248,.2)', 1); } });
   glow(3.4, 1.4, -2, 3, '#e8f2ff', .08);
@@ -503,7 +503,7 @@ SCENES[5] = () => {
     const x = side * 2.5;
     add(Math.hypot(x - CAM.x, z - CAM.z), c => {
       const b = box(c, x, z, side * Math.PI / 2, 2.4, 1.0, 2.5, 0, '#4b4a3c');
-      for (let t = 0; t < 3; t++) { const y = .15 + t * .8, you = side < 0 && z === -1.6 && t === 1; for (const u of [-.55, .55]) { const me = you && u < 0; poly(c, [b.P3(u - .42, -.51, y), b.P3(u + .42, -.51, y), b.P3(u + .42, -.51, y + .7), b.P3(u - .42, -.51, y + .7)], '#c9c4a8', 'rgba(0,0,0,.4)', 1); poly(c, [b.P3(u - .31, -.515, y + .08), b.P3(u + .31, -.515, y + .08), b.P3(u + .31, -.515, y + .62), b.P3(u - .31, -.515, y + .62)], me ? '#ffcf3a' : '#0b0c09'); } line3(c, [b.P3(-1.1, -.52, y - .02), b.P3(1.1, -.52, y - .02)], P.green, .02); }
+      for (let t = 0; t < 3; t++) { const y = .15 + t * .8, you = side < 0 && z === -1.6 && t === 1; for (const u of [-.55, .55]) { const me = you && u < 0; poly(c, [b.P3(u - .42, -.51, y), b.P3(u + .42, -.51, y), b.P3(u + .42, -.51, y + .7), b.P3(u - .42, -.51, y + .7)], '#c9c4a8', 'rgba(0,0,0,.4)', 1); poly(c, [b.P3(u - .31, -.515, y + .08), b.P3(u + .31, -.515, y + .08), b.P3(u + .31, -.515, y + .62), b.P3(u - .31, -.515, y + .62)], me ? '#ffcf3a' : '#3a3b33'); poly(c, [b.P3(u - .27, -.517, y + .38), b.P3(u + .27, -.517, y + .38), b.P3(u + .27, -.517, y + .43), b.P3(u - .27, -.517, y + .43)], 'rgba(239,234,219,.45)'); } line3(c, [b.P3(-1.1, -.52, y - .02), b.P3(1.1, -.52, y - .02)], P.green, .02); }
     });
   }
   // the dashed amber walkway rings on the floor, and reading lamps glowing
@@ -613,21 +613,21 @@ SCENES.h = async () => {
   for (let k = N - 1; k >= 0; k--) for (const side of [-1, 1]) {
     const idx = k * 2 + (side < 0 ? 0 : 1), zc = k * CELL + 1.5, za = zc - DW / 2, zb = zc + DW / 2, x = side * HW, xb = side * (HW + DEP);
     const txt = list[idx], isYou = idx === youIdx, occ = txt && txt[1];
-    // the recess: back panel, then the inner sides of the opening
-    const back = isYou ? null : occ ? '#151612' : '#0b0c09';
-    if (back) poly(ctx, [[xb, D0, za], [xb, D0, zb], [xb, D1, zb], [xb, D1, za]], fog(back, zc));
+    // the door itself, drawn like episode 1's bed 0 door: a frosted panel with a bubbled texture and a latch bar.
+    // Yours is gold; occupied doors are warm steel; empty ones are dark steel. Only bed 0 is red.
+    const base = isYou ? '#f5b82a' : occ ? '#a9ab96' : '#5f6155', hi = isYou ? '#ffe58a' : occ ? '#d6d8c4' : '#787a6c', lo = isYou ? '#e09a1c' : occ ? '#8a8c78' : '#4c4e44';
+    const xp = xb - side * .005, Pn = (y, z) => [xp, y, z];
+    poly(ctx, [Pn(D0, za), Pn(D0, zb), Pn(D1, zb), Pn(D1, za)], fog(base, zc));
+    const Rb = rng(9000 + idx * 31);
+    for (let i = 0; i < 16; i++) { const r = .06 + Rb() * .13, yy = D0 + r + Rb() * (D1 - D0 - 2 * r), zz = za + r + Rb() * (DW - 2 * r), pts = []; for (let j = 0; j < 16; j++) { const a = j / 16 * 2 * Math.PI; pts.push(Pn(yy + Math.sin(a) * r, zz + Math.cos(a) * r)); } poly(ctx, pts, hex(fog(Rb() < .5 ? hi : lo, zc), .7)); }
+    const ly = D0 + (D1 - D0) * .58;
+    poly(ctx, [Pn(ly - .06, za + .06), Pn(ly - .06, zb - .06), Pn(ly + .06, zb - .06), Pn(ly + .06, za + .06)], hex(fog('#efeadb', zc), isYou ? .75 : .45));
+    poly(ctx, [Pn(ly - .045, za + .1), Pn(ly - .045, za + .19), Pn(ly + .045, za + .19), Pn(ly + .045, za + .1)], fog(isYou ? '#a8641a' : '#1a1b16', zc));
     poly(ctx, [[x, D1, za], [xb, D1, za], [xb, D1, zb], [x, D1, zb]], fog('#7d7a68', zc));                      // head of the opening
     poly(ctx, [[x, D0, za], [xb, D0, za], [xb, D0, zb], [x, D0, zb]], fog('#a9a58e', zc));                      // sill
-    poly(ctx, [[x, D0, zb], [xb, D0, zb], [xb, D1, zb], [x, D1, zb]], fog('#77745f', zc));                      // far jamb (the one you see)
-    if (isYou) {
-      // your door: a glowing gold panel with the sun-and-hill picture
-      const g = (y, z) => [xb - side * .01, y, z];
-      poly(ctx, [g(D0, za), g(D0, zb), g(D1, zb), g(D1, za)], '#ffcf3a');
-      poly(ctx, [g(D1 - .02, za + .55 * DW), g(D1 - .02, zb), g(D0 + .5, zb)], 'rgba(255,255,255,.18)');
-      const sun = []; for (let i = 0; i < 24; i++) { const a = i / 24 * 2 * Math.PI; sun.push(g(D0 + 1.12 + Math.sin(a) * .13, zc - .02 + Math.cos(a) * .13)); } poly(ctx, sun, '#e8901a');
-      const hill = []; for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI; hill.push(g(D0 + .02 + Math.sin(a) * .5, zc + Math.cos(a) * .44)); } poly(ctx, hill, '#e8901a');
-      glow(x - side * .15, (D0 + D1) / 2, zc, 3.0, '#ffc23a', .4); glow(x - side * .6, .2, zc, 2.4, '#ffc23a', .25);
-    }
+    poly(ctx, [[x, D0, zb], [xb, D0, zb], [xb, D1, zb], [x, D1, zb]], fog('#77745f', zc));                      // far jamb
+    if (isYou) { glow(x - side * .5, (D0 + D1) / 2, zc, 3.0, '#ffc23a', .28); glow(x - side * .6, .2, zc, 2.4, '#ffc23a', .25); }
+    else glow(x - side * .1, (D0 + D1) / 2, zc, 1.8, occ ? '#e8ecd0' : '#b8bca8', (occ ? .22 : .08) * (1 - dark(zc)));
     // the thick pale frame around the opening (front face)
     const fc = fog(isYou ? '#e2dcc0' : '#c9c4a8', zc), fe = fog('#5d5a4a', zc);
     poly(ctx, [[x, D1, za - FR], [x, D1, zb + FR], [x, D1 + FR, zb + FR], [x, D1 + FR, za - FR]], fc, fe, 1);
