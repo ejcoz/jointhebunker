@@ -41,6 +41,15 @@ h1{font:400 clamp(40px,8vw,64px)/1.02 Anton,Impact,sans-serif;margin:0;letter-sp
 .lvl.on text{fill:var(--gold)}
 .stage{opacity:0;transition:opacity .45s ease,transform 1s cubic-bezier(.6,0,.25,1);transform-origin:50% 50%;pointer-events:none}
 .stage.on{opacity:1}
+#silo.stage.on{pointer-events:auto}
+.lvl,#b8{cursor:pointer}
+.lvl:hover rect.room{fill:#3a3218}
+.finfo{margin-top:12px;background:rgba(20,14,9,.86);border:1px solid #4a3a22;border-left:4px solid var(--hz);border-radius:12px;padding:14px 16px}
+.finfo.red{border-left-color:var(--red)}
+.finfo h3{margin:0;font:400 22px Anton,sans-serif;letter-spacing:.02em}
+.finfo .rng{color:var(--muted);font-size:14px;margin:2px 0 8px}
+.finfo p{margin:0 0 8px}
+.finfo .job{display:inline-block;font:700 13px Fredoka,sans-serif;background:var(--hz);color:#15100a;border-radius:999px;padding:4px 12px}
 .fig{overflow:hidden;border-radius:14px}
 .cap{position:absolute;left:12px;bottom:10px;right:12px;font:400 18px Anton,Impact,sans-serif;letter-spacing:.03em;color:var(--hz);text-shadow:0 2px 6px #000;opacity:0;transition:opacity .4s}
 .cap.on{opacity:1}
@@ -90,7 +99,7 @@ button.ghost{background:transparent;color:var(--ink);border:2px solid #4a3a22;fo
 a.follow{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:10px;background:var(--gold);color:#15100a;font:700 16px Fredoka,sans-serif;text-decoration:none}
 .msg{font-size:14px;color:var(--muted)}
 .levels{margin-top:34px;display:grid;gap:6px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));font-size:14px}
-.levels div{background:rgba(20,14,9,.7);border-left:3px solid var(--hz);padding:8px 10px;border-radius:4px}
+.levels div{cursor:pointer;background:rgba(20,14,9,.7);border-left:3px solid var(--hz);padding:8px 10px;border-radius:4px}
 .levels b{font:400 16px Anton,sans-serif;color:var(--hz);margin-right:6px}
 .levels .b8{border-color:var(--red)}.levels .b8 b{color:var(--red)}
 footer{margin-top:28px;color:var(--muted);font-size:13px}
@@ -119,6 +128,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
         <button type="button" data-v="door">Your door</button>
         <button type="button" data-v="replay">Walk me there again</button>
       </div>
+      <div class="finfo" id="finfo" hidden></div>
     </div>
 
     <section class="desk" aria-labelledby="deskTitle">
@@ -283,8 +293,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       const [hx, hy] = at(56, 120);
       p += `<circle class="blink" cx="${hx}" cy="${hy}" r="20" fill="#ff3b3b" opacity=".18"/><circle cx="${hx}" cy="${hy}" r="13" fill="#2a2b28" stroke="#ff3b3b" stroke-width="1.5"/><path d="M${hx - 10} ${hy}l3 -3 3 3 3 -3 3 3 3 -3 3 3" stroke="#ffb27a" stroke-width="1.4" fill="none"/>`;
     } else if (lvl === "B5") {
-      p += "";
+      for (let k = 0; k < 8; k++) { const [x, y] = at(48, k * 45); p += `<circle cx="${x}" cy="${y}" r="3" fill="#ffc23a" opacity=".7"/>`; }
     }
+    if (lvl === "B6") for (let k = 0; k < 3; k++) { const [x, y] = at(40, 200 + k * 50); p += `<ellipse cx="${x}" cy="${y}" rx="6" ry="3.5" fill="#8a6a44"/><circle cx="${x + 6}" cy="${y - 2}" r="2.6" fill="#8a6a44"/>`; }
+    if (lvl === "B7") for (let k = 0; k < 2; k++) { const [x, y] = at(40, 200 + k * 60); p += `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" fill="#2b2a24" stroke="#7fd6e8" stroke-opacity=".5"/>` + [0, 1, 2].map(j => `<path d="M${x - 4} ${y - 3 + j * 3}h8" stroke="#7fd6e8" stroke-opacity=".5"/>`).join(""); }
+    if (lvl === "B4") for (let k = 0; k < 2; k++) { const [x, y] = at(44, 90 + k * 40); p += `<rect x="${x - 12}" y="${y - 3}" width="24" height="6" rx="2" fill="#6b5236"/>`; }
+    if (lvl === "B3") for (let k = 0; k < 8; k++) { const [x, y] = at(40, k * 45); p += `<path d="M${x} ${y + 5}c-4 -4 4 -6 0 -10" stroke="#6fbf3a" stroke-width="1.6" fill="none"/>`; }
     return p;
   }
   function floorScene(lvl, bed) {
@@ -296,7 +310,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       f += `<circle class="blink" cx="200" cy="200" r="22" fill="#ff3b3b" opacity=".25"/><g transform="translate(200 200)"><rect x="-10" y="-6" width="20" height="12" rx="2" fill="#ff3b3b"/></g>`;
       return { svg: f, pos: { x: 200, y: 200 } };
     }
-    const rings = RINGS[lvl] || RINGS.dflt, you = slotPos(lvl, bed);
+    const rings = RINGS[lvl] || RINGS.dflt, you = bed == null ? { x: -99, y: -99, a: 0 } : slotPos(lvl, bed);
     let f = `<defs><radialGradient id="fl" cx=".5" cy=".5" r=".55"><stop offset="0" stop-color="#2b261b"/><stop offset="1" stop-color="#16130d"/></radialGradient><radialGradient id="glow"><stop offset="0" stop-color="#ffc23a" stop-opacity=".55"/><stop offset="1" stop-color="#ffc23a" stop-opacity="0"/></radialGradient></defs>`;
     f += `<circle cx="200" cy="200" r="192" fill="#6c6855"/><circle cx="200" cy="200" r="184" fill="#a9a48c" opacity=".35"/><circle cx="200" cy="200" r="178" fill="url(#fl)"/>`;
     for (const [r, n] of rings) for (let i = 0; i < n; i++) {
@@ -306,6 +320,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     }
     f += props(lvl);
     f += `<circle cx="200" cy="200" r="30" fill="#24211a" stroke="#f2c230" stroke-width="2" stroke-dasharray="6 5"/>` + [0, 1, 2, 3, 4].map(k => `<path d="M${184 + k * 8} 186v28" stroke="#6c6855" stroke-width="2"/>`).join("");
+    if (bed == null) return { svg: f, pos: { x: 200, y: 200 } };
     f += `<circle cx="${you.x.toFixed(1)}" cy="${you.y.toFixed(1)}" r="26" fill="url(#glow)"/><circle class="you-ring" cx="${you.x.toFixed(1)}" cy="${you.y.toFixed(1)}" r="9" fill="none" stroke="#ffc23a" stroke-width="2"/>`;
     f += `<g transform="translate(${you.x.toFixed(1)} ${you.y.toFixed(1)}) rotate(${(you.a + 90).toFixed(1)}) scale(1.35)"><rect x="-7" y="-4" width="14" height="8" rx="1.5" fill="#ffc23a"/><rect x="-5" y="1.5" width="10" height="1.6" fill="#fff6d8"/></g>`;
     const lx = you.x < 200 ? you.x + 16 : you.x - 16, anchor = you.x < 200 ? "start" : "end";
@@ -342,15 +357,16 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     ["silo", "floor", "door"].forEach(id => $(id).classList.toggle("on", id === v));
     views.querySelectorAll("button").forEach(b => b.classList.toggle("cur", b.dataset.v === v));
     if (!opts.keepZoom) { $("silo").style.transform = ""; floorSvg.style.transform = ""; }
-    if (cur) cap.textContent = v === "silo" ? "" : v === "floor" ? (cur.lvl === "B8" ? "B8 · the floor that doesn't exist" : `${cur.lvl} · ${LV[cur.lvl].name} · your bunk`) : (cur.lvl === "B8" ? "Bed 0" : `Bed ${fmt(cur.bed)}`);
-    cap.classList.toggle("on", v !== "silo" && !!cur);
+    if (cur) cap.textContent = v === "silo" ? "Tap a floor to look inside" : v === "floor" ? (cur.lvl === "B8" ? "B8 · the floor that doesn't exist" : `${cur.lvl} · ${LV[cur.lvl].name}${cur.tour ? "" : " · your bunk"}`) : (cur.lvl === "B8" ? "Bed 0" : `Bed ${fmt(cur.bed)}`);
+    else cap.textContent = "Tap a floor to look inside";
+    cap.classList.toggle("on", true);
   }
-  function resetScene() { timers.forEach(clearTimeout); timers = []; cur = null; views.hidden = true; stage("silo"); }
+  function resetScene() { timers.forEach(clearTimeout); timers = []; cur = null; views.hidden = true; $("finfo").hidden = true; stage("silo"); }
   function play(c) {
     timers.forEach(clearTimeout); timers = []; cur = c;
     const fl = floorScene(c.lvl, c.bed); floorSvg.innerHTML = fl.svg; cur.pos = fl.pos;
     doorSvg.innerHTML = doorScene(c.lvl, c.bed, c.handle, c.fno, c.confirmed);
-    views.hidden = false;
+    views.hidden = false; views.querySelectorAll("button").forEach(b => b.hidden = false); info(c.lvl);
     if (RM) { stage("door"); return; }
     stage("silo");
     const i = LEVELS.findIndex(l => l.id === c.lvl), cy = c.lvl === "B8" ? 367 : 40 + i * 40 + 17;
@@ -361,6 +377,36 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     T(3300, () => { stage("door"); });
     try { if (innerWidth < 820) fig.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
   }
+
+  const INFO = {
+    B1: ["Entry and decontamination", "The airlock behind the blast door, the decontamination showers and the quarantine bunks. Everyone starts here.", "The first floor we dug out. Everything was empty and unlocked. That should have told us something."],
+    B2: ["Command and medical", "The radio room listens for other survivors. The periscope watches the surface. The master copy of the counter lives here, beside the med bay.", "The archives hold the original blueprints. We don't talk about how many floors they show."],
+    B3: ["The garden", "Planters under pink grow-lights, tomato vines and the seed vault. The warmest, brightest floor. The only green thing left in the world.", "Don't eat the tomatoes before they're ripe."],
+    B4: ["Commons and pantry", "The mess hall, the kitchen and a pantry stacked floor to ceiling with tins. The school, the library and one box of old films. The only floor big enough to kick a ball.", "Most of the bunker's gossip starts here."],
+    B5: ["Main dormitory", "The biggest floor. Thirty thousand bunks curving around the wall, row after row.", "Lights out is lights out."],
+    B6: ["The armory", "Rifle racks, ammo crates and caged work lamps. The security office, a small brig and three dogs. Half of you chose it.", "Someone has to guard this place."],
+    B7: ["Engineering", "The generators, the reactor and the air scrubbers that start at 10,000 survivors. Loud and hot. The people who live here like the noise.", "There's a hatch in the floor. It's welded shut. Don't put your ear to it."],
+    B8: ["The floor that doesn't exist", "There are seven floors. Officially.", "Bed 0 is taken. The door is latched from the inside."],
+  };
+  const JOBS = { B6: "Now recruiting: guards", B4: "Now recruiting: a cook", B2: "Now recruiting: a doctor" };
+  function info(lvl) {
+    const [name, a, b] = INFO[lvl], L = LV[lvl], el = $("finfo");
+    el.className = "finfo" + (lvl === "B8" ? " red" : "");
+    el.innerHTML = `<h3>${lvl} · ${name}</h3><div class="rng">${lvl === "B8" ? "Bed 0 · one bed" : `Beds ${fmt(L.lo)} – ${fmt(L.hi)}`}</div><p>${a}</p><p><em>${b}</em></p>${JOBS[lvl] ? `<span class="job">${JOBS[lvl]}</span>` : ""}`;
+    el.hidden = false;
+  }
+  function tour(lvl) {
+    timers.forEach(clearTimeout); timers = []; cur = { lvl, bed: null, tour: true };
+    const fl = floorScene(lvl, lvl === "B8" ? 0 : null); floorSvg.innerHTML = fl.svg;
+    views.hidden = false; views.querySelector('[data-v="door"]').hidden = true; views.querySelector('[data-v="replay"]').hidden = true;
+    light(lvl); info(lvl);
+    if (RM) { stage("floor"); return; }
+    stage("silo");
+    const i = LEVELS.findIndex(l => l.id === lvl), cy = lvl === "B8" ? 367 : 40 + i * 40 + 17;
+    timers.push(setTimeout(() => { const sv = $("silo"); sv.style.transformOrigin = `50% ${(cy / 400 * 100).toFixed(1)}%`; sv.style.transform = "scale(4.2)"; }, 120));
+    timers.push(setTimeout(() => stage("floor", { keepZoom: true }), 1000));
+  }
+  $("silo").addEventListener("click", e => { const g = e.target.closest(".lvl,#b8"); if (g) tour(g.id === "b8" ? "B8" : g.id.slice(3)); });
   views.addEventListener("click", e => {
     const b = e.target.closest("button[data-v]"); if (!b || !cur) return;
     if (b.dataset.v === "replay") play(cur); else { timers.forEach(clearTimeout); timers = []; stage(b.dataset.v); }
@@ -422,7 +468,11 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     catch { $("msg").textContent = lastLine }
   });
 
-  $("levels").innerHTML = LEVELS.map(l => `<div><b>${l.id}</b>${fmt(l.lo)}–${fmt(l.hi)} · ${l.name}</div>`).join("") + `<div class="b8"><b>B8</b>Bed 0 · Doesn't exist</div>`;
+  $("levels").innerHTML = LEVELS.map(l => `<div data-l="${l.id}" role="button" tabindex="0"><b>${l.id}</b>${fmt(l.lo)}–${fmt(l.hi)} · ${l.name}</div>`).join("") + `<div class="b8" data-l="B8" role="button" tabindex="0"><b>B8</b>Bed 0 · Doesn't exist</div>`;
+  const goLvl = e => { const d = e.target.closest("[data-l]"); if (!d) return; tour(d.dataset.l); try { fig.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {} };
+  $("levels").addEventListener("click", goLvl);
+  $("levels").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goLvl(e); } });
+  stage("silo");
 
   const ash = $("ash");
   ash.innerHTML = Array.from({ length: 40 }, () => `<i style="left:${Math.random() * 100}%;animation-duration:${8 + Math.random() * 10}s;animation-delay:-${Math.random() * 18}s;opacity:${.15 + Math.random() * .35}"></i>`).join("");
