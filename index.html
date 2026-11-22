@@ -65,6 +65,7 @@ h1{font:400 clamp(40px,8vw,64px)/1.02 Anton,Impact,sans-serif;margin:0;letter-sp
 .blink{animation:blink 1.2s steps(2,start) infinite}
 @keyframes blink{50%{opacity:.15}}
 .knock{animation:knock .9s ease-in-out 3}
+#front.knock3{animation:knock .3s ease-in-out 3}
 @keyframes knock{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}60%{transform:translateX(-2px)}}
 @media(prefers-reduced-motion:reduce){.stage{transition:none}.you-ring,.blink,.knock{animation:none}}
 .desk{background:rgba(20,14,9,.86);border:1px solid #4a3a22;border-radius:14px;padding:clamp(18px,3vw,28px);backdrop-filter:blur(2px)}
@@ -498,12 +499,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     const b8 = c.lvl === "B8";
     views.querySelector('[data-v="hall"]').hidden = b8;
     // start drawing both scenes now, while the silo zooms
-    const pf = b8 ? Promise.resolve(null) : load(live, floorQS(c.lvl));
+    const pf = load(live, floorQS(c.lvl));
     const ph = b8 ? Promise.resolve(null) : load(hall, hallQS(c));
-    const pd = b8 ? Promise.resolve(null) : load(front, frontQS(c));
+    const pd = load(front, b8 ? `f=d&w=${HW2}&h=${HH2}&n=0&st=${encodeURIComponent("LATCHED FROM INSIDE")}&sk=z` : frontQS(c));
     cur.liveP = pf; cur.hallP = ph; cur.frontP = pd;
     try { if (innerWidth < 820) fig.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
-    if (RM) { const w = await pd; if (me !== run) return; stage(w ? "front" : "door"); return; }
+    if (RM) { const w = await pd; if (me !== run) return; stage(w ? "front" : "door"); if (b8 && w) cap.textContent = "Bed 0 · latched from the inside"; return; }
     stage("silo");
     const i = LEVELS.findIndex(l => l.id === c.lvl), cy = b8 ? 367 : 40 + i * 40 + 17;
     await wait(350); if (me !== run) return;
@@ -517,7 +518,16 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     if (useLive) walkTo(live, lw.DOOR || [.5, .42], 2.9);
     else { floorSvg.style.transformOrigin = `${(fl.pos.x / 4).toFixed(1)}% ${(fl.pos.y / 4).toFixed(1)}%`; floorSvg.style.transform = "scale(3)"; }
     await wait(useLive ? 2500 : 1050); if (me !== run) return;
-    if (b8) { stage("door"); return; }
+    if (b8) {
+      // B8 has no hallway: straight through to the one door, then three knocks back
+      const fw = await pd; if (me !== run) return;
+      if (!fw) { stage("door"); return; }
+      blk.classList.add("on"); await wait(420); if (me !== run) return;
+      stage("front"); blk.classList.remove("on"); cap.textContent = "Bed 0 · latched from the inside";
+      await wait(250); if (me !== run) return; walkTo(front, [.5, .48], 1.1);
+      for (let k = 0; k < 3; k++) { await wait(k ? 650 : 1800); if (me !== run) return; front.classList.remove("knock3"); void front.offsetWidth; front.classList.add("knock3"); }
+      return;
+    }
     // through the door into the hallway
     blk.classList.add("on"); await wait(380); if (me !== run) return;
     const hw = await ph; if (me !== run) return;
@@ -557,7 +567,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     views.hidden = false; views.querySelector('[data-v="door"]').hidden = true; views.querySelector('[data-v="replay"]').hidden = true;
     light(lvl); info(lvl);
     views.querySelector('[data-v="hall"]').hidden = true;
-    const me = ++run, pf = lvl === "B8" ? Promise.resolve(null) : load(live, floorQS(lvl)); cur.liveP = pf;
+    const me = ++run, pf = load(live, floorQS(lvl)); cur.liveP = pf;
     const show2 = async () => { const w = await pf; if (me !== run) return; stage(w && w.HAS ? "live" : "floor", { keepZoom: true }); };
     if (RM) { show2(); return; }
     stage("silo");
