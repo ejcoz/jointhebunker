@@ -452,7 +452,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       if (b < L.lo || b > L.hi) { plates.push(null); continue; }
       plates.push([fmt(b), i === 2 ? "@" + short(c.handle) : b === 48143 || b === 100000 ? null : o.has(b) ? "@" + short(o.get(b)) : null]);
     }
-    return `f=h&w=${HW2}&h=${HH2}&you=2&plates=` + encodeURIComponent(JSON.stringify(plates));
+    return `f=h&w=${HW2}&h=${HH2}&you=2${c.confirmed ? "" : "&held=1"}&plates=` + encodeURIComponent(JSON.stringify(plates));
   }
   // push in toward point p (0..1 of the frame), drifting it toward the centre without showing an edge
   function walkTo(el, p, sc) {
@@ -529,6 +529,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     const fw = await pd; if (me !== run || !fw) return;
     blk.classList.add("on"); await wait(380); if (me !== run) return;
     stage("front"); blk.classList.remove("on");
+    if (!c.confirmed) cap.textContent = `Bed ${fmt(c.bed)} · held · follow to unlock`;
     await wait(200); if (me !== run) return;
     walkTo(front, [.5, .46], 1.12);
   }
@@ -625,7 +626,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       $("note").innerHTML = `Follow to claim it.<br><a class="follow" href="https://www.instagram.com/jointhebunker/" target="_blank" rel="noopener">Follow @jointhebunker</a><span class="held-sub">Just followed? The manifest updates after every Transmission. Come back after the next one and your door will be waiting.</span>`;
       const st = $("stamp"); st.className = "stamp res"; st.textContent = "LOCKED"; st.hidden = false;
       tag.classList.add("show", "held"); $("next").classList.remove("show"); $("msg").textContent = "";
-      held({ lvl: L.id, bed, handle: key, fno: 0, confirmed: false });
+      play({ lvl: L.id, bed, handle: key, fno: 0, confirmed: false });
       return;
     }
     const st = $("stamp"); st.className = "stamp" + (fno ? "" : confirmed ? " ok" : " res");

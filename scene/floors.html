@@ -727,7 +727,7 @@ SCENES.h = async () => {
   const blank = Q.has('blank');
   const SAMPLE = [['48,141', '@survivor_77'], ['48,142', null], ['48,143', '@jointhebunker'], ['48,144', '@night_watch'], ['48,145', null], ['48,146', '@garden_kid'], ['48,147', null], ['48,148', '@b6_regular']];
   const list = plates || SAMPLE;
-  const youIdx = Q.has('you') ? +Q.get('you') : 2;
+  const youIdx = Q.has('you') ? +Q.get('you') : 2, heldH = Q.has('held');
   const dark = z => Math.min(1, Math.max(0, (z - 1.5) / 20)) ** .75;
   const fog = (col, z) => mix(col, '#050604', dark(z));
   // walls, floor, ceiling
@@ -750,7 +750,7 @@ SCENES.h = async () => {
   }
   for (let k = N - 1; k >= 0; k--) for (const side of [-1, 1]) {
     const idx = k * 2 + (side < 0 ? 0 : 1), zc = k * CELL + 1.5, za = zc - DW / 2, zb = zc + DW / 2, x = side * HW, xb = side * (HW + DEP);
-    const txt = list[idx], isYou = idx === youIdx, occ = txt && txt[1];
+    const txt = list[idx], isYou = idx === youIdx && !heldH, isMe = idx === youIdx, occ = txt && txt[1];
     // an old submarine hatch: tall rounded steel door, riveted rim and top band, a small window, a wheel lock, hinges, vent slats.
     // Yours: gold wheel, gold light in the window and leaking round the seam. Occupied: a faint warm window. Empty: a black window.
     const Rb = rng(9000 + idx * 31), xs = x + side * .005, xf = x - side * .04;   // coaming on the wall, door face slightly proud
@@ -781,6 +781,7 @@ SCENES.h = async () => {
     for (const hy of [D0 + .35, D1 - .4]) poly(ctx, [[xs - side * .02, hy - .07, zb - .02], [xs - side * .02, hy - .07, zb + .09], [xs - side * .02, hy + .07, zb + .09], [xs - side * .02, hy + .07, zb - .02]], fog('#2e2c24', zc));
     for (let i = 0; i < 4; i++) { const z0 = za + .22 + i * .16; poly(ctx, [[xf, D0 + .1, z0], [xf, D0 + .1, z0 + .08], [xf, D0 + .36, z0 + .08], [xf, D0 + .36, z0]], fog('#17160f', zc)); }
     if (!isYou && !occ) glow(xs, my, zc, 1.4, '#000000', 0);
+    if (isMe && !isYou) { const c0 = pj(x, (D0 + D1) / 2, zc); if (c0) window.YOU = [c0[0] / W, c0[1] / H]; }
     if (!txt || blank) continue;
     // the bed number above the door
     label(x, D1 + .34, zc, txt[0], f => `${f}px Anton`, isYou ? '#ffc23a' : fog('#8d8a7a', zc), DW * 1.05);
