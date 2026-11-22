@@ -24,6 +24,9 @@ body{margin:0;background:linear-gradient(180deg,#140e0a 0%,#3a2312 55%,#5a3417 1
 .ash i{position:absolute;top:-10px;width:3px;height:3px;border-radius:50%;background:#cfc6b0;opacity:.35;animation:fall linear infinite}
 @keyframes fall{to{transform:translate(30px,105vh)}}
 main{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:clamp(24px,4vw,56px) max(5vw,16px) 56px}
+.topnav{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.topnav a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid #4a3a22;color:var(--ink);text-decoration:none;font:600 15px Fredoka,sans-serif;background:rgba(20,14,9,.7)}
+.topnav a.cur{background:var(--hz);color:#15100a;border-color:var(--hz)}
 .stripes{height:10px;background:repeating-linear-gradient(-45deg,var(--hz) 0 12px,#15100a 12px 24px);border-radius:2px;margin-bottom:22px}
 h1{font:400 clamp(40px,8vw,64px)/1.02 Anton,Impact,sans-serif;margin:0;letter-spacing:.01em;text-wrap:balance}
 .lede{color:var(--muted);margin:10px 0 0;max-width:46ch}
@@ -97,6 +100,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
 <body>
 <div class="ash" id="ash" aria-hidden="true"></div>
 <main>
+  <nav class="topnav"><a href="/" class="cur" aria-current="page">Find your bed</a><a href="/founders/">Founders Wall</a></nav>
   <div class="stripes" aria-hidden="true"></div>
   <h1>The lights are on.<br>Find your bed.</h1>
   <p class="lede">100,000 beds. One is already taken. Type your username and we'll tell you where you sleep.</p>
@@ -405,7 +409,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     const fno = FOUNDER_NO.get(key), confirmed = KNOWN.has(key);
     const st = $("stamp"); st.className = "stamp" + (fno ? "" : confirmed ? " ok" : " res");
     st.textContent = fno ? "FOUNDER #" + fno : confirmed ? "CONFIRMED" : "UNCONFIRMED"; st.hidden = false;
-    if (fno) $("note").textContent += " Your name is on the Founders Wall.";
+    if (fno) $("note").insertAdjacentHTML("beforeend", ` <a href="/founders/#f${fno}" style="color:inherit;font-weight:600">See your name on the Founders Wall.</a>`);
     if (!confirmed) $("note").textContent = "Reserved, not confirmed. You're not on the manifest yet. We check it after every Transmission. Follow to confirm your bed.";
     lastLine = `Bed ${fmt(bed)} · ${L.id} ${L.name.toLowerCase()}${fno ? ` · Founder #${fno}` : confirmed ? "" : " · reserved"} ☢️`;
     tag.classList.add("show"); light(L.id); play({ lvl: L.id, bed, handle: key, fno, confirmed }); $("next").classList.add("show"); $("msg").textContent = "";
