@@ -92,6 +92,12 @@ button.ghost{background:transparent;color:var(--ink);border:2px solid #4a3a22;fo
 .stamp.ok{border-color:#2f7d32;color:#2f7d32}
 .stamp.res{border-color:#6c6855;color:#5b5848;font-size:15px}
 .tag .note{margin:12px 0 0;padding-top:12px;border-top:2px dashed #15100a55;font-style:italic}
+.views[hidden]{display:none}
+.tag.held .num{color:#6c6855;opacity:.55}
+.tag.held{background:linear-gradient(160deg,#b9b49e,#7c7865)}
+.follow{display:inline-block;margin-top:12px;background:var(--hz);color:#15100a;border-radius:999px;padding:11px 20px;font:600 16px Fredoka,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(242,194,48,.35)}
+.follow:hover{filter:brightness(1.08)}
+.held-sub{display:block;margin-top:10px;font-size:13px;opacity:.85}
 .tag.zero{background:linear-gradient(160deg,#3a0d0d,#1a0606);color:#ffd9d9}
 .tag.zero .num{color:var(--red)}
 .tag.zero::before{background:var(--red)}
@@ -386,7 +392,8 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${zero ? "#5a1a1a" : confirmed ? "#ffd76a" : "#d6d2c2"}"/><stop offset="1" stop-color="${zero ? "#2a0a0a" : confirmed ? "#c9932a" : "#8f8b77"}"/></linearGradient>
       <radialGradient id="pl"><stop offset="0" stop-color="${lamp}" stop-opacity=".9"/><stop offset="1" stop-color="${lamp}" stop-opacity="0"/></radialGradient></defs>`;
     d += `<rect width="300" height="400" fill="url(#cw)"/><rect y="360" width="300" height="40" fill="#2b2820"/>`;
-    d += `<text x="150" y="38" text-anchor="middle" style="font:400 22px Anton,sans-serif;letter-spacing:.06em;fill:${zero ? "#ff3b3b" : "#f2c230"}">${zero ? "B8 · DOES NOT EXIST" : esc(L.id + " · " + L.name.toUpperCase())}</text>`;
+    const ttl = zero ? "B8 · DOES NOT EXIST" : L.id + " · " + L.name.toUpperCase();
+    d += `<text x="150" y="38" text-anchor="middle"${ttl.length > 20 ? ' textLength="268" lengthAdjust="spacingAndGlyphs"' : ""} style="font:400 22px Anton,sans-serif;letter-spacing:.06em;fill:${zero ? "#ff3b3b" : "#f2c230"}">${zero ? "B8 · DOES NOT EXIST" : esc(L.id + " · " + L.name.toUpperCase())}</text>`;
     d += `<rect x="62" y="52" width="176" height="312" rx="10" fill="#22201a"/>` + Array.from({ length: 8 }, (_, k) => `<rect x="${62 + k * 22}" y="52" width="11" height="8" fill="${zero ? "#ff3b3b" : "#f2c230"}"/>`).join("");
     d += `<g class="${zero ? "knock" : ""}"><rect x="72" y="64" width="156" height="296" rx="8" fill="url(#st)" stroke="#1a1a17" stroke-width="2"/>`;
     d += [[84, 76], [216, 76], [84, 348], [216, 348], [84, 212], [216, 212]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#9a9d96"/>`).join("");
@@ -396,7 +403,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     d += `<text x="150" y="220" text-anchor="middle" style="font:400 ${bed >= 10000 ? 28 : 32}px Anton,sans-serif;fill:${zero ? "#ff3b3b" : "#1a1206"}">${zero ? "0" : fmt(bed)}</text>`;
     d += `<text x="150" y="237" text-anchor="middle"${zero ? ` textLength="104" lengthAdjust="spacingAndGlyphs"` : fit} style="font:600 11px Inter,sans-serif;fill:${zero ? "#ffd9d9" : "#3a2606"}">${zero ? "LATCHED FROM INSIDE" : esc(hTxt)}</text>`;
     d += `<rect x="204" y="262" width="12" height="44" rx="5" fill="#9a9d96"/></g>`;
-    const stampTxt = zero ? "" : fno ? `FOUNDER #${fno}` : confirmed ? "CONFIRMED" : "RESERVED · UNCONFIRMED";
+    const stampTxt = zero ? "" : fno ? `FOUNDER #${fno}` : confirmed ? "CONFIRMED" : "HELD · LOCKED";
     const stampCol = fno ? "#c5221f" : confirmed ? "#2f7d32" : "#8a8670";
     if (stampTxt) d += `<g transform="translate(150 300) rotate(-9)"><rect x="-${confirmed || fno ? 62 : 80}" y="-15" width="${confirmed || fno ? 124 : 160}" height="30" rx="3" fill="#ffffff22" stroke="${stampCol}" stroke-width="3"/><text x="0" y="8" text-anchor="middle" style="font:400 ${confirmed || fno ? 19 : 15}px Anton,sans-serif;fill:${stampCol};letter-spacing:.04em">${stampTxt}</text></g>`;
     d += `<rect x="72" y="358" width="156" height="3" fill="${lamp}" opacity=".9"/><rect x="40" y="361" width="220" height="16" fill="${lamp}" opacity=".12"/>`;
@@ -452,6 +459,18 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     cap.textContent = t; cap.classList.add("on");
   }
   let run = 0;
+  function held(c) {
+    const me = ++run; timers.forEach(clearTimeout); timers = []; cur = c; blk.classList.remove("on");
+    doorSvg.innerHTML = doorScene(c.lvl, c.bed, c.handle, 0, false);
+    views.hidden = true; $("finfo").hidden = true; light(c.lvl);
+    try { if (innerWidth < 820) fig.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+    stage("silo");
+    const lockCap = () => { cap.textContent = `Bed ${fmt(c.bed)} · held · follow to unlock`; };
+    if (RM) { stage("door"); lockCap(); return; }
+    const i = LEVELS.findIndex(l => l.id === c.lvl), cy = 40 + i * 40 + 17;
+    timers.push(setTimeout(() => { if (me !== run) return; const s = $("silo"); s.style.transformOrigin = `50% ${(cy / 400 * 100).toFixed(1)}%`; s.style.transform = "scale(2.2)"; cap.textContent = `${c.lvl} · ${LV[c.lvl].name}`; }, 300));
+    timers.push(setTimeout(() => { if (me !== run) return; stage("door"); lockCap(); }, 1500));
+  }
   function resetScene() { run++; timers.forEach(clearTimeout); timers = []; cur = null; views.hidden = true; $("finfo").hidden = true; blk.classList.remove("on"); stage("silo"); }
   const wait = ms => new Promise(r => timers.push(setTimeout(r, ms)));
   async function play(c) {
@@ -571,12 +590,23 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     $("lv").textContent = L.id + " · " + L.name;
     $("where").textContent = L.where;
     $("note").textContent = NOTES[kind] ?? NOTES[""];
-    const fno = FOUNDER_NO.get(key), confirmed = KNOWN.has(key);
+    const fno = FOUNDER_NO.get(key), confirmed = KNOWN.has(key) || !!PICK[key];
+    tag.classList.remove("held");
+    if (!confirmed) {
+      // not on the manifest: tease the held bed, lock the door, no walk. The number never changes, so it's the bed they get after following.
+      $("who").textContent = "@" + key;
+      $("lv").textContent = "A bed is being held for you · " + L.id;
+      $("where").textContent = "You're not on the manifest yet.";
+      $("note").innerHTML = `Follow to claim it.<br><a class="follow" href="https://www.instagram.com/jointhebunker/" target="_blank" rel="noopener">Follow @jointhebunker</a><span class="held-sub">Just followed? The manifest updates after every Transmission. Come back after the next one and your door will be waiting.</span>`;
+      const st = $("stamp"); st.className = "stamp res"; st.textContent = "LOCKED"; st.hidden = false;
+      tag.classList.add("show", "held"); $("next").classList.remove("show"); $("msg").textContent = "";
+      held({ lvl: L.id, bed, handle: key, fno: 0, confirmed: false });
+      return;
+    }
     const st = $("stamp"); st.className = "stamp" + (fno ? "" : confirmed ? " ok" : " res");
     st.textContent = fno ? "FOUNDER #" + fno : confirmed ? "CONFIRMED" : "UNCONFIRMED"; st.hidden = false;
     if (fno) $("note").insertAdjacentHTML("beforeend", ` <a href="/founders/#f${fno}" style="color:inherit;font-weight:600">See your name on the Founders Wall.</a>`);
-    if (!confirmed) $("note").textContent = "Reserved, not confirmed. You're not on the manifest yet. We check it after every Transmission. Follow to confirm your bed.";
-    lastLine = `Bed ${fmt(bed)} · ${L.id} ${L.name.toLowerCase()}${fno ? ` · Founder #${fno}` : confirmed ? "" : " · reserved"} ☢️`;
+    lastLine = `Bed ${fmt(bed)} · ${L.id} ${L.name.toLowerCase()}${fno ? ` · Founder #${fno}` : ""} ☢️`;
     tag.classList.add("show"); light(L.id); play({ lvl: L.id, bed, handle: key, fno, confirmed }); $("next").classList.add("show"); $("msg").textContent = "";
     try { localStorage.setItem("bunkerHandle", key) } catch {}
   }
