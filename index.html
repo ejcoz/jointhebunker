@@ -690,8 +690,8 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       // not on the manifest: tease the held bed, lock the door, no walk. The number never changes, so it's the bed they get after following.
       $("who").textContent = "@" + key;
       $("lv").textContent = "A bed is being held for you · " + L.id;
-      $("where").textContent = "You're not on the manifest yet.";
-      $("note").innerHTML = `Follow to claim it.<br><a class="follow" href="https://www.instagram.com/jointhebunker/" target="_blank" rel="noopener">Follow @jointhebunker</a><span class="held-sub">Just followed? The manifest updates after every Transmission. Come back after the next one and your door will be waiting.</span>`;
+      $("where").textContent = "Doors unlock after every Transmission.";
+      $("note").innerHTML = `<b>Already following? You're in.</b> The manifest updates after every Transmission. Your bed is held, and this door unlocks after the next one.<span class="held-sub">Not following yet?</span><a class="follow" href="https://www.instagram.com/jointhebunker/" target="_blank" rel="noopener">Follow @jointhebunker</a>`;
       const st = $("stamp"); st.className = "stamp res"; st.textContent = "LOCKED"; st.hidden = false;
       tag.classList.add("show", "held"); $("next").classList.remove("show"); $("msg").textContent = "";
       play({ lvl: L.id, bed, handle: key, fno: 0, confirmed: false });
