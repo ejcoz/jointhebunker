@@ -702,8 +702,6 @@ SCENES[4] = () => {
     const b = box(c, 4.8, -3.6, -Math.PI / 2 + .25, 2.4, .7, CEIL - .5, 0, '#3a3226');
     for (let y = .2; y < CEIL - .7; y += .42) { poly(c, [b.P3(-1.15, -.36, y - .04), b.P3(1.15, -.36, y - .04), b.P3(1.15, -.36, y), b.P3(-1.15, -.36, y)], '#7a6a4a'); for (let u = -1.05; u < 1.05; u += .17) { if (R4() < .1) continue; const col = ['#b8462e', '#c9c3ad', '#7a8f4a', '#d8a23a', '#9aa3a8', '#8a3a2a'][Math.floor(R4() * 6)]; poly(c, [b.P3(u, -.37, y), b.P3(u + .13, -.37, y), b.P3(u + .13, -.37, y + .3), b.P3(u, -.37, y + .3)], col, 'rgba(0,0,0,.35)', .8); poly(c, [b.P3(u, -.375, y + .1), b.P3(u + .13, -.375, y + .1), b.P3(u + .13, -.375, y + .18), b.P3(u, -.375, y + .18)], mix(col, '#ffffff', .35)); } }
   });
-  // a soccer ball on the commons floor
-  add(2.4, c => { const q = pj(.7, .16, -4.9); if (!q) return; const r = FOC * .16 / q[2]; c.fillStyle = '#e8e4d8'; c.beginPath(); c.arc(q[0], q[1], r, 0, 7); c.fill(); c.fillStyle = '#26241d'; for (const [dx, dy, s] of [[0, 0, .32], [-.6, -.35, .22], [.6, -.35, .22], [-.45, .55, .2], [.45, .55, .2]]) { c.beginPath(); c.arc(q[0] + dx * r, q[1] + dy * r, r * s, 0, 7); c.fill(); } c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(q[0], q[1] + r * 1.05, r * 1.1, r * .25, 0, 0, 7); c.fill(); });
   // the library corner: a bookshelf and a box of old film reels
   add(R + 3.5, c => {
     const ph = -112 * D2R; wallRect(c, ph - 5 * D2R, ph + 5 * D2R, .1, 2.6, .25, '#4a3a28', '#221a10', 2);
