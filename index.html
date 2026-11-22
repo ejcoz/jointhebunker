@@ -94,6 +94,13 @@ button.ghost{background:transparent;color:var(--ink);border:2px solid #4a3a22;fo
 .stamp.res{border-color:#6c6855;color:#5b5848;font-size:15px}
 .tag .note{margin:12px 0 0;padding-top:12px;border-top:2px dashed #15100a55;font-style:italic}
 .views[hidden]{display:none}
+.counter{margin:16px 0 4px;padding:12px 14px;border-radius:10px;background:#0f0d09;border:1.5px solid #3a2f18;max-width:420px}
+.ct-lbl{font:600 11px Fredoka,sans-serif;letter-spacing:.18em;color:#8a8068}
+.ct-num{font:400 34px Anton,Impact,sans-serif;color:var(--hz);letter-spacing:.02em;line-height:1.1}
+.ct-of{font-size:18px;color:#6c6855}
+.ct-bar{height:6px;border-radius:3px;background:#2a2418;margin:8px 0 6px;overflow:hidden}
+.ct-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9cf04a,#f2c230);transition:width 1.2s ease}
+.ct-sub{font:400 12.5px Fredoka,sans-serif;color:#a9a48c;line-height:1.4}
 .flnav{display:flex;gap:8px;width:100%;justify-content:center}
 .flnav button{min-width:96px}
 .tag.held .num{color:#6c6855;opacity:.55}
@@ -126,6 +133,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   <div class="stripes" aria-hidden="true"></div>
   <h1>The lights are on.<br>Find your bed.</h1>
   <p class="lede">100,000 beds. One is already taken. Type your username and we'll tell you where you sleep.</p>
+  <div class="counter" id="counter" aria-live="polite">
+    <div class="ct-lbl">SURVIVORS INSIDE</div>
+    <div class="ct-num"><span id="ctNum">0</span><span class="ct-of"> / 100,000</span></div>
+    <div class="ct-bar"><i id="ctBar"></i></div>
+    <div class="ct-sub" id="ctSub"></div>
+  </div>
 
   <div class="grid">
     <div class="scene">
@@ -342,6 +355,17 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   // ---- the walk: silo -> your floor -> your door ----
   const floorSvg = $("floor"), doorSvg = $("door"), fig = $("fig"), cap = $("cap"), views = $("views");
   const RM = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches } catch { return false } })();
+  // ---- the live count: everyone on the latest manifest (followers export + commenters), and when it was updated
+  const MANIFEST_UPDATED = "2026-11-22T16:45:20Z";   // latest export: comments pulled 11:45 AM EST, followers 11:17 AM EST
+  (() => {
+    const total = KNOWN.size, next = total < 1000 ? 1000 : total < 10000 ? 10000 : 100000;
+    const what = next === 10000 ? "the air starts flowing" : next === 1000 ? "the lights come on" : "the door seals";
+    const when = new Date(MANIFEST_UPDATED).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+    $("ctSub").innerHTML = `${fmt(next - total)} more until ${what} (${fmt(next)}).<br>Updated ${when}. New followers and comments are added after every Transmission.`;
+    const el = $("ctNum"), t0 = performance.now(), dur = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches } catch { return false } })() ? 0 : 1400;
+    (function tick(t) { const k = dur ? Math.min(1, (t - t0) / dur) : 1; el.textContent = fmt(Math.round(total * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(tick); })(t0);
+    requestAnimationFrame(() => { $("ctBar").style.width = (total / next * 100).toFixed(1) + "%"; });
+  })();
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const RINGS = { B5: [[164, 46], [134, 40], [104, 32], [74, 24]], dflt: [[164, 46], [134, 40], [104, 32]] };
   const R2 = d => d * Math.PI / 180;
