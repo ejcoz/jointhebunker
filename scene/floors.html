@@ -492,7 +492,17 @@ function plant(x, z, s = 1) {
   add(dist(x, z), c => { cylY(c, x, z, .2 * s, 0, .35 * s, '#8a4a2a', 12); const R2 = rng(Math.round(x * 100 + z * 10)); for (let k = 0; k < 14; k++) { const p = pj(x + (R2() - .5) * .5 * s, .4 * s + R2() * .7 * s, z + (R2() - .5) * .4 * s); if (!p) continue; const r = FOC * (.09 + R2() * .08) * s / p[2]; c.fillStyle = ['#3f8a2a', '#5fb036', '#2f6a22', '#86cc45'][k % 4]; c.beginPath(); c.ellipse(p[0], p[1], r * 1.2, r * .8, R2() * 3, 0, 7); c.fill(); } });
 }
 function diningTable(x, z, yaw, len = 2.6) {
-  add(dist(x, z), c => { const b = box(c, x, z, yaw, len, .9, .06, .74, '#7a5a3a'); for (const [u, v] of [[-len / 2 + .1, -.38], [len / 2 - .1, -.38], [-len / 2 + .1, .38], [len / 2 - .1, .38]]) line3(c, [b.P3(u, v, 0), b.P3(u, v, .74)], '#4a3424', .05); for (let i = 0; i < 4; i++) { const u = -len / 2 + .4 + i * (len - .8) / 3; for (const v of [-.65, .65]) { const q = b.P3(u, v, 0); box(c, q[0], q[2], yaw, .4, .4, .45, 0, '#5a4430'); const bk = b.P3(u, v * 1.28, 0); box(c, bk[0], bk[2], yaw, .4, .06, .9, 0, '#5a4430'); } const m = b.P3(u, 0, .8); cylY(c, m[0], m[2], .05, .8, .1, ['#c9c3ad', '#b8462e', '#d8a23a', '#7a8f4a'][i], 8); } const cnd = b.P3(0, 0, .8); cylY(c, cnd[0], cnd[2], .04, .8, .18, '#f0e6c8', 8); });
+  add(dist(x, z), c => {
+    const ct = Math.cos(yaw), st = Math.sin(yaw), P3 = (u, v) => [x + ct * u + st * v, z - st * u + ct * v];
+    // draw the far bench first, then the table, then the near bench
+    const sides = [-.72, .72].sort((a, b) => dist(...P3(0, b)) - dist(...P3(0, a)));
+    const bench = v => { const q = P3(0, v); const b = box(c, q[0], q[1], yaw, len - .2, .32, .05, .42, '#6a4a30'); for (const u of [-len / 2 + .3, len / 2 - .3]) line3(c, [b.P3(u, 0, 0), b.P3(u, 0, .42)], '#4a3424', .04); };
+    bench(sides[0]);
+    const b = box(c, x, z, yaw, len, .9, .06, .74, '#7a5a3a'); for (const [u, v] of [[-len / 2 + .1, -.38], [len / 2 - .1, -.38], [-len / 2 + .1, .38], [len / 2 - .1, .38]]) line3(c, [b.P3(u, v, 0), b.P3(u, v, .74)], '#4a3424', .05);
+    for (let i = 0; i < 4; i++) { const m = b.P3(-len / 2 + .45 + i * (len - .9) / 3, (i % 2 ? .18 : -.18), .8); cylY(c, m[0], m[2], .05, .8, .1, ['#c9c3ad', '#b8462e', '#d8a23a', '#7a8f4a'][i], 8); }
+    const cnd = b.P3(0, 0, .8); cylY(c, cnd[0], cnd[2], .04, .8, .18, '#f0e6c8', 8);
+    bench(sides[1]);
+  });
   glow(x, 1.05, z, 1.4, '#FFD27A', .4);
 }
 function bookshelf(x, z, yaw) {
