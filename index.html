@@ -59,6 +59,7 @@ h1{font:400 clamp(40px,8vw,64px)/1.02 Anton,Impact,sans-serif;margin:0;letter-sp
 .cap.on{opacity:1}
 .views{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
 .views button{font:600 14px Fredoka,sans-serif;min-height:40px;padding:0 14px;border-radius:999px;background:rgba(20,14,9,.8);color:var(--ink);border:1.5px solid #4a3a22}
+.views button.roomb{background:var(--gold);color:#15100a;border-color:var(--gold)}
 .views button.cur{background:var(--hz);color:#15100a;border-color:var(--hz)}
 .you-ring{animation:ping 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}
@@ -125,6 +126,8 @@ a.follow{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;b
 footer{margin-top:28px;color:var(--muted);font-size:13px}
 @media(prefers-reduced-motion:reduce){.ash{display:none}.tag.show{animation:none}}
 </style>
+<script>window.goatcounter={no_onload:true};window.gcEv=n=>{try{window.goatcounter.count&&window.goatcounter.count({path:n,title:n,event:true})}catch(e){}};</script>
+<script data-goatcounter="https://jointhebunker.goatcounter.com/count" async src="//gc.zgo.at/count.js" onload="try{goatcounter.count({path:location.pathname})}catch(e){}"></script>
 </head>
 <body>
 <div class="ash" id="ash" aria-hidden="true"></div>
@@ -158,6 +161,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
         <button type="button" data-v="hall">Your bunk</button>
         <button type="button" data-v="door">Your door</button>
         <button type="button" data-v="replay">Walk me there again</button>
+        <button type="button" data-v="room" class="roomb" hidden>Open my room</button>
         <span class="flnav"><button type="button" data-v="up" aria-label="Floor above">↑ <span id="upLbl">B1</span></button><button type="button" data-v="down" aria-label="Floor below"><span id="downLbl">B2</span> ↓</button></span>
       </div>
       <div class="finfo" id="finfo" hidden></div>
@@ -619,6 +623,8 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     views.hidden = false; views.querySelectorAll("button").forEach(b => b.hidden = false); info(c.lvl); navLabels(c.lvl);
     const b8 = c.lvl === "B8";
     views.querySelector('[data-v="hall"]').hidden = b8;
+    views.querySelector('[data-v="room"]').hidden = b8 || !c.confirmed;
+    window.gcEv && gcEv(b8 ? "bed-zero" : c.confirmed ? "bed-found" : "bed-held");
     // start drawing both scenes now, while the silo zooms
     const pf = load(live, floorQS(c.lvl));
     const ph = b8 ? Promise.resolve(null) : load(hall, hallQS(c));
@@ -691,7 +697,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   function tour(lvl, quick) {
     timers.forEach(clearTimeout); timers = []; cur = { lvl, bed: null, tour: true };
     const fl = floorScene(lvl, lvl === "B8" ? 0 : null); floorSvg.innerHTML = fl.svg;
-    views.hidden = false; views.querySelector('[data-v="door"]').hidden = true; views.querySelector('[data-v="replay"]').hidden = true;
+    views.hidden = false; views.querySelector('[data-v="door"]').hidden = true; views.querySelector('[data-v="replay"]').hidden = true; views.querySelector('[data-v="room"]').hidden = true;
     light(lvl); info(lvl);
     views.querySelector('[data-v="hall"]').hidden = true; navLabels(lvl);
     const me = ++run, pf = load(live, floorQS(lvl)); cur.liveP = pf;
@@ -707,6 +713,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   views.addEventListener("click", e => {
     const b = e.target.closest("button[data-v]"); if (!b || !cur) return;
     if (b.dataset.v === "replay") { play(cur); return; }
+    if (b.dataset.v === "room") { if (cur.handle && cur.bed) window.gcEv && gcEv("room-button"), location.href = `/room/?h=${encodeURIComponent(cur.handle)}&b=${cur.bed}`; return; }
     if (b.dataset.v === "up" || b.dataset.v === "down") { const i = ORDER.indexOf(cur.lvl) + (b.dataset.v === "up" ? -1 : 1); if (i >= 0 && i < ORDER.length) { light(ORDER[i]); tour(ORDER[i], true); } return; }
     run++; timers.forEach(clearTimeout); timers = []; blk.classList.remove("on");
     const v = b.dataset.v;
