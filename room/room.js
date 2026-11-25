@@ -13,7 +13,15 @@ const bed = parseInt(qs.get("b"), 10);
 const L = LEVELS.find(l => bed >= l[2] && bed <= l[3]);
 window.addEventListener("hashchange", () => location.reload());
 const app = $("app");
-if (!handle || !L) { app.innerHTML = `<div class="lock"><h1>THIS DOOR IS <b>LOCKED</b></h1><p>Find your bed first, then open your room from your door.</p><a class="btn go" href="/" style="display:inline-block;text-decoration:none">Find my bed</a></div>`; return; }
+if (!handle || !L) {
+  try { const ru = localStorage.getItem("bunkerRoomUrl"); if (ru && ru.includes("#h=")) { location.replace(ru); return; } } catch (e) {}
+  document.body.classList.add("nodock");
+  app.innerHTML = `<div class="lock"><div class="k">JOIN THE BUNKER</div><h1>OPEN <b>YOUR ROOM</b></h1><p>Type your Instagram username. We'll find your bed and take you inside.</p>
+  <form id="go" class="goform"><span>@</span><input id="gu" autocapitalize="none" spellcheck="false" placeholder="yourname" maxlength="40"><button class="btn go" type="submit">Go</button></form>
+  <p class="fine">Not on the manifest yet? Follow @jointhebunker. Doors unlock after every Transmission.</p></div>`;
+  $("go").onsubmit = e => { e.preventDefault(); const u = $("gu").value.trim().replace(/^@+/, ""); if (u) location.href = "/?u=" + encodeURIComponent(u) + "&go=room"; };
+  return;
+}
 const KEY = "bunkerRoom:" + handle;
 let st = { coins: 0, own: [], eq: {}, best: {}, earned: 0, coat: null };
 try {
@@ -170,15 +178,15 @@ app.innerHTML = `
 ${pet ? mate : PETASK}
 <div id="coats"></div>
 <p>${petLine} ${JOB[lvl]}</p>
-<div class="row"><button class="btn go" id="openCat" type="button">Open the catalogue · ${ITEMS.length} items</button></div>
-<h2>EARN COINS</h2>
-<div class="games" id="games"></div>
+<div class="hint" id="hint"><b>How it works</b><ol><li><b>Play</b> a game to earn coins.</li><li>Open the <b>Catalogue</b> and tap anything to try it on.</li><li>Buy it. It stays in your room.</li></ol><button id="hintX" type="button" aria-label="Got it">Got it</button></div>
 <p class="fine">Coins are earned, never bought. Your room is saved on this phone for now.</p>`;
 function games() {
-  $("games").innerHTML = GAMES.map(g => `<button class="gm" data-g="${g.id}" type="button" style="--c:${g.col}"><b>${g.n}</b><span>${g.d}</span><em>${st.best[g.id] ? "Best: " + st.best[g.id] + " coins" : "Not played yet"}</em></button>`).join("");
+  $("pgrid").innerHTML = GAMES.map(g => `<button class="gm" data-g="${g.id}" type="button" style="--c:${g.col}"><b>${g.n}</b><span>${g.d}</span><em>${st.best[g.id] ? "Best: " + st.best[g.id] + " coins" : "Not played yet"}</em></button>`).join("");
 }
 draw(); games();
 ev(pet ? "room-open-pet" : "room-open");
+try { if (localStorage.getItem("bunkerHintSeen")) $("hint").hidden = true; } catch (e) {}
+$("hintX").onclick = () => { $("hint").hidden = true; try { localStorage.setItem("bunkerHintSeen", "1") } catch (e) {} };
 function coatPicker() {
   const box = $("coats"); if (!pet || !COATS[pet[0]]) { box.innerHTML = ""; return; }
   const k = pet[0], names = COATS[k], keep = st.coat, POS = { cat: [0, 0], dog: [0, 0], rabbit: [-4, 10], rodent: [0, 4], bird: [0, 10] };
@@ -229,9 +237,21 @@ function bar() {
     (on ? `<button class="cb" data-a="off" type="button">Take it out</button>` : own ? `<button class="cb go" data-a="on" type="button">Put it in</button>` :
       `<button class="cb go" data-a="buy" type="button" ${st.coins < i.c ? "disabled" : ""}>${st.coins < i.c ? `Need ${i.c - st.coins} more` : `Buy · ${i.c}`}</button>`);
 }
-const openCat = () => { sheet.classList.add("on"); document.body.classList.add("catopen"); renderCat(); scrollTo({ top: 0, behavior: "smooth" }); ev("catalogue-open"); };
-const closeCat = () => { sheet.classList.remove("on"); document.body.classList.remove("catopen"); preview = null; sel = null; draw(); };
-$("openCat").onclick = openCat; $("cclose").onclick = closeCat;
+const dockSet = d => document.querySelectorAll("#dock button").forEach(b => b.classList.toggle("on", b.dataset.d === d));
+const closeSheets = () => { sheet.classList.remove("on"); $("play").classList.remove("on"); document.body.classList.remove("sheetopen"); if (preview || sel) { preview = null; sel = null; draw(); } dockSet("room"); };
+const openCat = () => { closeSheets(); sheet.classList.add("on"); document.body.classList.add("sheetopen"); renderCat(); scrollTo({ top: 0, behavior: "smooth" }); dockSet("cat"); ev("catalogue-open"); };
+const openPlay = () => { closeSheets(); $("play").classList.add("on"); document.body.classList.add("sheetopen"); games(); scrollTo({ top: 0, behavior: "smooth" }); dockSet("play"); ev("play-open"); };
+$("cclose").onclick = closeSheets; $("pclose").onclick = closeSheets;
+const petBtn = document.querySelector('#dock [data-d="pet"]');
+if (pet && !COATS[pet[0]]) petBtn.hidden = true; else if (!pet) petBtn.querySelector("span").textContent = "Get a pet";
+$("dock").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return; const d = b.dataset.d;
+  if (d === "room") { closeSheets(); scrollTo({ top: 0, behavior: "smooth" }); }
+  if (d === "play") $("play").classList.contains("on") ? closeSheets() : openPlay();
+  if (d === "cat") sheet.classList.contains("on") ? closeSheets() : openCat();
+  if (d === "pet") { closeSheets(); if (pet) { if (!coatOpen) { coatOpen = true; coatPicker(); } $("coats").scrollIntoView({ behavior: "smooth", block: "center" }); }
+    else { const pa = document.querySelector("#app .petask"); if (pa) { pa.scrollIntoView({ behavior: "smooth", block: "center" }); pa.classList.remove("flash"); void pa.offsetWidth; pa.classList.add("flash"); } } dockSet(d); }
+};
 $("tabs").onclick = e => { const b = e.target.closest("[data-c]"); if (b) { cat = b.dataset.c; renderCat(); $("grid").scrollTop = 0; } };
 $("grid").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; sel = b.dataset.i; preview = st.eq[BY[sel].slot] === sel ? null : sel; draw(); renderCat(); };
 $("cbar").onclick = e => {
@@ -258,7 +278,7 @@ function play(id) {
     } });
 }
 function closeGame() { if (stop) stop(); G.classList.remove("on"); document.body.classList.remove("gameopen"); }
-$("games").onclick = e => { const b = e.target.closest("[data-g]"); if (b) play(b.dataset.g); };
+$("pgrid").onclick = e => { const b = e.target.closest("[data-g]"); if (b) play(b.dataset.g); };
 $("gquit").onclick = closeGame;
 $("mute").onclick = () => { window.BK_MUTE = !window.BK_MUTE; $("mute").textContent = window.BK_MUTE ? "Sound off" : "Sound on"; try { localStorage.setItem("bunkerMute", window.BK_MUTE ? "1" : "") } catch (e) {} };
 try { window.BK_MUTE = !!localStorage.getItem("bunkerMute"); } catch (e) {}

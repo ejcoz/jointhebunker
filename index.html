@@ -59,7 +59,10 @@ h1{font:400 clamp(40px,8vw,64px)/1.02 Anton,Impact,sans-serif;margin:0;letter-sp
 .cap.on{opacity:1}
 .views{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
 .views button{font:600 14px Fredoka,sans-serif;min-height:40px;padding:0 14px;border-radius:999px;background:rgba(20,14,9,.8);color:var(--ink);border:1.5px solid #4a3a22}
-.views button.roomb{background:var(--gold);color:#15100a;border-color:var(--gold)}
+.roomcta{display:flex;justify-content:center;align-items:center;gap:10px;margin:14px 0 10px;padding:16px;border-radius:14px;background:var(--gold);color:#15100a;font:700 20px Fredoka,sans-serif;text-decoration:none;box-shadow:0 6px 24px #ffc23a55}
+.roomcta span{font-size:24px}
+.views button.roomb{order:-1;flex-basis:100%;min-height:52px;font-size:18px;background:var(--gold);color:#15100a;border-color:var(--gold);box-shadow:0 6px 24px #ffc23a55}
+.views button.roomb::after{content:"  →"}
 .views button.cur{background:var(--hz);color:#15100a;border-color:var(--hz)}
 .you-ring{animation:ping 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}
@@ -132,7 +135,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
 <body>
 <div class="ash" id="ash" aria-hidden="true"></div>
 <main>
-  <nav class="topnav"><a href="/" class="cur" aria-current="page">Find your bed</a><a href="/founders/">Founders Wall</a></nav>
+  <nav class="topnav"><a href="/" class="cur" aria-current="page">Find your bed</a><a href="/room/" id="navRoom" hidden>My room</a><a href="/founders/">Founders Wall</a></nav>
   <div class="stripes" aria-hidden="true"></div>
   <h1>The lights are on.<br>Find your bed.</h1>
   <p class="lede">100,000 beds. One is already taken. Type your username and we'll tell you where you sleep.</p>
@@ -188,6 +191,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       </div>
 
       <div class="next" id="next">
+        <a class="roomcta" id="roomCta" href="/room/">Open my room <span>→</span></a>
         <ol>
           <li>Screenshot your tag.</li>
           <li>Comment your bed number on the latest Transmission.</li>
@@ -732,6 +736,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     c: "You were here early. We remembered.",
     "": "Want a different level? Comment it on the next Transmission."
   };
+  let GO_ROOM = new URLSearchParams(location.search).get("go") === "room";
   function show(raw) {
     const tag = $("tag"), key = clean(raw);
     tag.classList.remove("show", "zero"); void tag.offsetWidth; $("stamp").hidden = true;
@@ -781,6 +786,11 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     lastLine = `Bed ${fmt(bed)} · ${L.id} ${L.name.toLowerCase()}${fno ? ` · Founder #${fno}` : ""} ☢️`;
     tag.classList.add("show"); light(L.id); play({ lvl: L.id, bed, handle: key, fno, confirmed }); $("next").classList.add("show"); $("msg").textContent = "";
     try { localStorage.setItem("bunkerHandle", key) } catch {}
+    const roomUrl = `/room/#h=${encodeURIComponent(key)}&b=${bed}`;
+    $("roomCta").href = roomUrl; $("navRoom").href = roomUrl; $("navRoom").hidden = false;
+    $("roomCta").onclick = () => { window.gcEv && gcEv("room-cta"); };
+    try { localStorage.setItem("bunkerRoomUrl", roomUrl) } catch {}
+    if (GO_ROOM) { GO_ROOM = false; window.gcEv && gcEv("room-shortcut"); setTimeout(() => location.href = roomUrl, 900); }
   }
   $("dymBtn").addEventListener("click", () => { const h = $("dymBtn").textContent.replace(/^@/, ""); $("handle").value = h; show(h) });
   $("form").addEventListener("submit", e => { e.preventDefault(); show($("handle").value) });
@@ -798,7 +808,10 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   const ash = $("ash");
   ash.innerHTML = Array.from({ length: 40 }, () => `<i style="left:${Math.random() * 100}%;animation-duration:${8 + Math.random() * 10}s;animation-delay:-${Math.random() * 18}s;opacity:${.15 + Math.random() * .35}"></i>`).join("");
 
-  try { const saved = localStorage.getItem("bunkerHandle"); if (saved) { $("handle").value = saved; show(saved) } } catch {}
+  try { const ru = localStorage.getItem("bunkerRoomUrl"); if (ru) { $("navRoom").href = ru; $("navRoom").hidden = false; } } catch {}
+  const QP = new URLSearchParams(location.search);
+  if (QP.get("u")) { try { history.replaceState(null, "", "/") } catch {} $("handle").value = QP.get("u"); show(QP.get("u")); }
+  else try { const saved = localStorage.getItem("bunkerHandle"); if (saved) { $("handle").value = saved; show(saved) } } catch {}
 }
 </script>
 </body>
