@@ -1,299 +1,100 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Your room · Join the Bunker</title>
-<meta name="description" content="Your room in the bunker. Earn coins, fix it up, meet your bunkmate.">
+<meta name="description" content="Your room in the bunker. Play, earn coins, fix it up, meet your bunkmate.">
+<script>try{if(location.search)history.replaceState(null,"",location.pathname+"#"+location.search.slice(1))}catch(e){}</script>
+<script>window.goatcounter={no_onload:true};window.gcQ=[];window.gcEv=n=>{try{if(window.goatcounter.count)window.goatcounter.count({path:n,title:n,event:true});else gcQ.push(n)}catch(e){}};</script>
+<script data-goatcounter="https://jointhebunker.goatcounter.com/count" async src="//gc.zgo.at/count.js" onload="try{goatcounter.count({path:location.pathname});gcQ.splice(0).forEach(gcEv)}catch(e){}"></script>
 <style>
 @font-face{font-family:Anton;src:url(/scene/fonts/Anton-Regular.ttf);font-display:swap}
 @font-face{font-family:Fredoka;src:url(/scene/fonts/Fredoka-latin.woff2);font-display:swap}
-:root{color-scheme:dark;--ink:#efe8d4;--muted:#b3aa90;--gold:#ffc23a;--hz:#f2c230;--red:#ff3b3b}
+:root{color-scheme:dark;--ink:#efe8d4;--muted:#b3aa90;--gold:#ffc23a;--red:#ff3b3b}
 *{box-sizing:border-box}
 body{margin:0;background:linear-gradient(180deg,#140e0a 0%,#3a2312 55%,#5a3417 100%);background-attachment:fixed;color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}
-main{max-width:460px;margin:0 auto;padding:16px 14px 40px}
-a{color:var(--gold)}
+main{max-width:460px;margin:0 auto;padding:14px 14px 40px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .back{font:600 14px Fredoka,sans-serif;color:var(--ink);text-decoration:none;opacity:.85}
 .coins{font:400 18px Anton,sans-serif;letter-spacing:.04em;background:#1b1a15;border:2px solid var(--gold);color:var(--gold);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:6px}
-.coins i{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe9a6,#f2c230 55%,#b8860b);display:inline-block;box-shadow:0 0 0 1.5px #6b4a12}
-.k{font:400 13px Anton,sans-serif;letter-spacing:.14em;color:var(--muted);margin-top:14px}
-h1{font:400 28px Anton,sans-serif;margin:2px 0 12px;letter-spacing:.03em;line-height:1.05;word-break:break-word}h1 b{color:var(--gold);font-weight:400}
-#room{width:100%;display:block;border-radius:14px;box-shadow:0 10px 30px #0008;background:#3f3c30}
+.coins i,.cp i{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe9a6,#f2c230 55%,#b8860b);display:inline-block;box-shadow:0 0 0 1.5px #6b4a12;vertical-align:-2px}
+.k{font:400 13px Anton,sans-serif;letter-spacing:.14em;color:var(--muted);margin-top:12px}
+h1{font:400 28px Anton,sans-serif;margin:2px 0 10px;letter-spacing:.03em;line-height:1.05;word-break:break-word}h1 b{color:var(--gold);font-weight:400}
+.roomwrap{display:flex;justify-content:center}
+#room{width:100%;display:block;border-radius:14px;box-shadow:0 10px 30px #0008;background:#3f3c30;transition:height .25s}
+body.catopen #room{width:auto;height:calc(48vh - 135px);min-height:200px}
+body.catopen,body.gameopen{overflow:hidden}
 .mate{display:flex;align-items:center;gap:10px;background:#1b1a15;border:2px solid var(--gold);border-radius:12px;padding:8px 12px;margin-top:12px}
 .mate small{display:block;font:700 10px Inter,sans-serif;letter-spacing:.2em;color:var(--muted)}
 .mate b{font:400 18px Anton,sans-serif;color:var(--gold);letter-spacing:.04em}
-.q{border-left:3px solid var(--gold);padding:6px 10px;margin:10px 0;color:var(--muted);font-size:13px;background:#0003}
 p{font-size:15px;line-height:1.45;color:#e2dac4;margin:12px 2px}
 .row{display:flex;gap:8px;margin-top:12px}
 .btn{flex:1;text-align:center;font:600 16px Fredoka,sans-serif;background:#2e2c24;border:2px solid #8a8670;color:var(--ink);border-radius:12px;padding:12px;cursor:pointer}
 .btn.go{background:var(--gold);color:#15100a;border-color:var(--gold)}
 h2{font:400 20px Anton,sans-serif;letter-spacing:.05em;margin:22px 0 8px}
-.shop{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.it{background:#1b1a15cc;border:1.5px solid #4a3a22;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
-.it .n{font:600 15px Fredoka,sans-serif}
-.it .d{font-size:12px;color:var(--muted);flex:1}
-.it button{font:600 14px Fredoka,sans-serif;border-radius:10px;padding:8px;border:1.5px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer}
-.it button.on{background:var(--gold);color:#15100a}
-.it button:disabled{opacity:.4;cursor:default}
+.games{display:grid;gap:8px}
+.gm{text-align:left;background:#1b1a15cc;border:1.5px solid #4a3a22;border-left:6px solid var(--c);border-radius:12px;padding:12px 14px;color:var(--ink);cursor:pointer;display:grid;gap:3px;font-family:inherit}
+.gm b{font:400 19px Anton,sans-serif;letter-spacing:.04em;color:var(--c)}
+.gm span{font-size:13px;color:#d8cfb6;line-height:1.35}
+.gm em{font:600 12px Fredoka,sans-serif;font-style:normal;color:var(--gold)}
 .fine{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.5}
 .lock{text-align:center;padding:40px 10px}
+/* room animations */
+.twinkle{animation:tw 1.6s ease-in-out infinite}@keyframes tw{50%{opacity:.45}}
+.tick{transform-origin:0 0;animation:tick 60s steps(60) infinite}@keyframes tick{to{transform:rotate(360deg)}}
+.static{animation:stc .25s steps(2) infinite}@keyframes stc{50%{fill:#d8ecff}}
+.lava{animation:lava 4s ease-in-out infinite}.lava2{animation:lava 5s ease-in-out infinite reverse}@keyframes lava{50%{transform:translateY(-8px)}}
+.snow{animation:snw 3s linear infinite}@keyframes snw{to{transform:translateY(10px);opacity:0}}
+.flame{transform-box:fill-box;transform-origin:50% 100%;animation:flm .5s ease-in-out infinite alternate}@keyframes flm{to{transform:scaleY(1.2) skewX(4deg)}}
+.swim{animation:swm 3s ease-in-out infinite alternate}@keyframes swm{to{transform:translateX(-5px)}}
+/* catalogue sheet */
+#cat{position:fixed;left:0;right:0;bottom:0;height:52vh;background:#15120ef5;border-top:3px solid var(--gold);border-radius:18px 18px 0 0;transform:translateY(105%);transition:transform .25s;z-index:8;display:flex;flex-direction:column;max-width:560px;margin:0 auto;box-shadow:0 -10px 40px #000a}
+#cat.on{transform:none}
+.chead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 4px}
+.chead b{font:400 20px Anton,sans-serif;letter-spacing:.06em}
+#cclose{font:600 14px Fredoka,sans-serif;background:none;border:1.5px solid #8a8670;color:var(--ink);border-radius:999px;padding:6px 12px}
+#tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 14px 8px;scrollbar-width:none}
+#tabs button{flex:none;font:600 14px Fredoka,sans-serif;border-radius:999px;padding:6px 12px;background:#2e2c24;color:var(--ink);border:1.5px solid #4a3a22}
+#tabs button.on{background:var(--gold);color:#15100a;border-color:var(--gold)}
+#grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 14px 10px;align-content:start}
+.ci{background:#1b1a15;border:1.5px solid #4a3a22;border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:3px;color:var(--ink);cursor:pointer;font-family:inherit}
+.ci svg{width:100%;aspect-ratio:1;border-radius:8px;display:block}
+.ci.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.ci.rare{background:linear-gradient(160deg,#2a2210,#1b1a15)}
+.cn{font:600 12px Fredoka,sans-serif;line-height:1.15;text-align:left}
+.cp{font:400 13px Anton,sans-serif;color:var(--gold);text-align:left;letter-spacing:.03em}
+#cbar{display:flex;align-items:center;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #4a3a22;min-height:58px}
+.cbt{flex:1;font-size:13px;color:var(--muted)}.cbt b{display:block;color:var(--ink);font:600 15px Fredoka,sans-serif}.cbt small{font-size:12px}
+.cb{font:600 15px Fredoka,sans-serif;border-radius:12px;padding:10px 14px;border:2px solid #8a8670;background:#2e2c24;color:var(--ink)}
+.cb.go{background:var(--gold);color:#15100a;border-color:var(--gold)}.cb:disabled{opacity:.55}
 /* game */
-#game{position:fixed;inset:0;background:#0c0906ee;display:none;align-items:center;justify-content:center;z-index:9;padding:14px}
+#game{position:fixed;inset:0;background:#0c0906f2;display:none;align-items:center;justify-content:center;z-index:9;padding:12px}
 #game.on{display:flex}
-.gbox{width:100%;max-width:420px}
-.ghead{display:flex;justify-content:space-between;font:400 18px Anton,sans-serif;letter-spacing:.05em;margin-bottom:8px}
-.bar{height:10px;border-radius:6px;background:#2e2c24;overflow:hidden;margin-bottom:8px}
+.gbox{width:100%;max-width:400px}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;font:400 18px Anton,sans-serif;letter-spacing:.05em;margin-bottom:6px;gap:8px}
+#ghud{color:var(--gold);font-size:16px}
+.bar{height:8px;border-radius:6px;background:#2e2c24;overflow:hidden;margin-bottom:8px}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3aa0ff,#1c5fb8);transition:width .2s}
-#gsvg{width:100%;display:block;border-radius:14px;background:#2b2820;touch-action:manipulation;user-select:none}
-.leak{cursor:pointer}
-.spray{animation:spray .5s linear infinite}
-@keyframes spray{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(14px)}}
-.pop{animation:pop .35s ease-out forwards}
-@keyframes pop{to{opacity:0;transform:translateY(-18px)}}
-.gmsg{text-align:center;margin-top:12px}
+#gsvg{width:100%;max-height:62vh;display:block;border-radius:14px;background:#2b2820;touch-action:none;user-select:none;-webkit-user-select:none}
+.leak,.bin,.bolt{cursor:pointer}
+.spray{animation:spray .5s linear infinite}@keyframes spray{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(14px)}}
+.pop{animation:pop .42s ease-out forwards}@keyframes pop{to{opacity:0;transform:translateY(-18px)}}
+.gmsg{text-align:center;margin-top:10px;min-height:60px;font-size:14px;color:#e2dac4}
 .gmsg b{font:400 26px Anton,sans-serif;color:var(--gold);display:block}
-</style><script>try{if(location.search)history.replaceState(null,"",location.pathname+"#"+location.search.slice(1))}catch(e){}</script>
-<script>window.goatcounter={no_onload:true};window.gcQ=[];window.gcEv=n=>{try{if(window.goatcounter.count)window.goatcounter.count({path:n,title:n,event:true});else gcQ.push(n)}catch(e){}};</script>
-<script data-goatcounter="https://jointhebunker.goatcounter.com/count" async src="//gc.zgo.at/count.js" onload="try{goatcounter.count({path:location.pathname});gcQ.splice(0).forEach(gcEv)}catch(e){}"></script>
-</head>
+.gd{color:var(--muted);font-size:13px}
+.gfoot{display:flex;justify-content:space-between;margin-top:8px}
+.gfoot button{font:600 13px Fredoka,sans-serif;background:none;border:1.5px solid #4a3a22;color:var(--muted);border-radius:999px;padding:5px 12px}
+@media (prefers-reduced-motion:reduce){.twinkle,.tick,.static,.lava,.lava2,.snow,.flame,.swim{animation:none}}
+</style></head>
 <body><main id="app"></main>
-<div id="game" role="dialog" aria-modal="true" aria-label="Patch the pipes"><div class="gbox">
-  <div class="ghead"><span>PATCH THE PIPES</span><span id="gtime">30</span></div>
-  <div class="bar" title="Flooding"><i id="gflood"></i></div>
-  <svg id="gsvg" viewBox="0 0 300 300"></svg>
+<section id="cat" aria-label="Catalogue">
+  <div class="chead"><b>CATALOGUE</b><button id="cclose" type="button">Done</button></div>
+  <div id="tabs"></div><div id="grid"></div><div id="cbar"></div>
+</section>
+<div id="game" role="dialog" aria-modal="true" aria-label="Mini game"><div class="gbox">
+  <div class="ghead"><span id="gname">GAME</span><span id="ghud"></span></div>
+  <div class="bar"><i id="gflood"></i></div>
+  <svg id="gsvg" viewBox="0 0 300 360"></svg>
   <div class="gmsg" id="gmsg"></div>
+  <div class="gfoot"><button id="gquit" type="button">← Quit</button><button id="mute" type="button">Sound on</button></div>
 </div></div>
-<script>
-{
-const PETS = {"isabella.nguyen._":["dog","Dog","Marshmallow",1],"jacob_orsumthing":["dog","Dog","",1],"owenpedersen3":["dog","Dog","",1],"elizabeth_hammond1":["cat","Cat","",1],"josephvanco":["dog","Dog","",1],"travisking2011":["dog","Dog","Lotus",1],"paityn_2012":["dog","Dog","",1],"andylan_2014":["cat","Cat","",1],"paul_roo1":["dog","Chihuahua","",1],"tav_rz":["dog","Puppy","",1],"payden73636272":["cat","Cat","Lokey",1],"joey.w2008":["cat","Cat","",1],"stxr_gxzer_23":["dog","Dog","",1],"brendan.zinninger":["dog","Dog","",1],"marshe_444":["cat","Cat","",1],"jayden23680":["cat","Cat","",1],"gnos_cin":["cat","Cat","",1],"alliebuggrace_14":["dog","Dog","",1],"ashersumner":["fish","Goldfish","Jeff",1],"dinashadesilva32":["dog","Dog","",1],"cvntellafregoso":["cat","Cat","Moka",1],"a1ex0camp0":["dog","Dog","",1],"carmen.becerra.b":["dog","Dog","",1],"clarasheltonn4":["dog","Dog","",1],"zakary.w23":["cat","Kitten","",1],"_itskay.harii":["rabbit","Rabbit","Ollie",1],"_blepnoodle_":["cat","Cat","",1],"zoey89768":["dog","Dog","",2],"kaydenm_39":["lizard","Lizard","",1],"lucystars13":["dog","Dog","",1],"derek_l_94":["cat","Cat","",2],"glxssy_sofa":["cat","Cat","",2],"superherospaceman":["critter","Hedgehog","Russell",1],"tkbsbeezy":["fish","Fish","",1],"emilio_bln_":["cat","Cat","",1],"abbie60925":["dog","Dog","",1],"spooky_vampire4":["critter","Sheep","",1],"tomas_1235702":["dog","Dog","",1],"k6tanna":["rodent","Hamster","",1],"allabout_madisonn":["dog","Dog","Sunshine",1],"sharxoxo_127":["cat","Cat","",1],"marty.flemming.v":["dog","Dog","",1],"kearneyonalee":["rabbit","Rabbit","",1],"clara_marinara_":["cat","Cat","",1],"mcvick_76":["dog","Dog","Auggie",1],"seb.ast8":["dog","Dog","",1],"hikmetkd1":["cat","Kitten","",1],"fw_al3x13":["cat","Cat","",1],"kamilrajnoch":["dog","Dog","",1],"_akash_10204":["dog","Dog","",1],"tombomb10071":["cat","Cat","",1],"dj._joel":["dog","Dog","",1],"jared_halocat092":["cat","Cat","",2],"gerski_mari445":["dog","Dog","",1],"jesus_caillou937":["fish","Fish","",1],"aaaalex42":["cat","Cat","",1],"gnorton06":["critter","Chicken","",1],"simplyy.y_a":["cat","Cat","",1],"levi82160":["dog","German shepherd","",1],"dominickdelara":["dog","Dog","Chaos",1],"llllllow8_":["cat","Cat","",1],"muvein_88":["dog","Dog","",1],"croir3o":["cat","Cat","",1],"bhavishna_15":["cat","Cat","",1],"khushii.bloomm":["cat","Cat","Lilly",1],"d_1xt":["cat","Kitten","",1],"samuel_janzy":["dog","Dog","",1],"cherrii_p1e_":["cat","Cat","",1],"aliviamaeloweflanagin":["cat","Cat","",1],"xhemv":["rabbit","Rabbit","",1],"laitynnn_grace":["cat","Kitten","",1],"av1war3":["turtle","Turtle","Steven",1],"samuel__nop":["cat","Cat","",1],"_adria.keeper05":["rodent","Chinchilla","",1],"kayden56548":["dog","Dog","",1],"krazzy__kdot":["dog","Dog","",1],"halo.in.the.dark":["dog","Dog","Dude",1],"stephy11162012":["dog","Puppy","",1],"paxton_rathbun":["dog","Dog","",1],"skilful_bedbug1":["cat","Cat","",1],"adambrisbee":["bird","Bird","",1],"gpvguimo":["rodent","Guinea pig","",1],"hxk_azure":["dog","Dog","",1],"eva_thediva7":["dog","Dog","",1],"nubiaiscoolig":["rabbit","Rabbit","",1],"nico_g771":["cat","Cat","",1],"saydez_z":["dog","Puppy","",1],"skylynn_cool":["turtle","Turtle","Turtle",1],"itzzz_b3tsyyy":["cat","Cat","",1],"_4hosz":["cat","Cat","",1],"ava.tuxhorn12":["cat","Cat","Mooshi",1],"bryce.lane4":["dog","Dog","",1],"david._horowitz":["cat","Cat","Baby",1],"lanasdiary.1":["dog","Dog","Gizmo",1],"mily_lightmare":["cat","Cat","Void",1],"millsbills61":["dog","Dog","",1],"ijohnson._2":["dog","Dog","",1],"user.konstantinos":["cat","Cat","",1],"jus.dacode":["dog","German shepherd","",1],"ebk_zaeongo":["cat","Cat","",1],"siyam_l90":["cat","Cat","",1],"hayden_ribot":["dog","Dog","",1],"nick_heff12":["dog","Puppy","Molly",1],"joeltiz_":["bird","Parrot","",1],"amy.s4313":["dog","Puppy","",1],"brav0_1945":["dog","German shepherd","",1],"read_between_rides":["snake","Snake","",1],"mike.y2554":["dog","Dog","",1],"floweremi_":["cat","Cat","",3],"gabenendvick":["dog","Dog","",1],"elliottpalmer16":["dog","Dog","",1],"2shifty7":["dog","Dog","Jake",1],"bigg20289":["dog","Dog","",1],"charlie_wisco":["dog","Dog","",1],"samuel_mbia1":["dog","Dog","",1],"klktifa1":["turtle","Turtle","",1],"danisocute2012":["dog","Dog","",1],"sh3nx1":["cat","Cat","",1],"willi_lapizza":["cat","Cat","",1],"ii_kazem_ii":["rabbit","Rabbit","Clover",1],"collin52089":["bird","Parrot","",1],"anthonymellor1.0":["cat","Cat","",1],"jholldagoat":["dog","Dog","Stella & Luna",2],"harlez_edits":["cat","Cat","",1],"c100_turtle":["dog","Dog","",1],"kai_the_trans_therian":["cat","Cat","",1],"crowbarlover9323":["cat","Cat","",3],"braxtonkasson":["cat","Cat","",1],"spam.mzz_67":["dog","Dog","",1],"drewsoley":["dog","Dog","Clyde",1],"raccoon_council_keeper":["critter","Raccoon","",1],"behuinejj":["cat","Cat","",1],"th3imm0rtal1":["cat","Cat","",3],"gazoobiewoobie":["dog","Dog","",1],"the_real_potatoking":["dog","Dog","Lotus",1],"acegamer303":["cat","Cat","",1],"ykk.gavv":["dog","Dog","",1],"mr_no_bounce":["snake","Snake","",1],"jaz040312":["dog","Dog","",1],"elizabriscoe02":["cat","Cat","",1],"arii_cstx":["cat","Cat","",1],"its_anderson472":["fish","Fish","John",1],"kyentoo":["dog","Lab","Lemmy & Jones",2],"zelinski_jacob":["critter","Chicken","Jarred",1],"that_1_rtr":["critter","Raccoon","",1],"noahp9102":["dog","Dog","",1],"samnotswaggy":["cat","Cat","",1],"no_itzsilver007_":["dog","Puppy","Spence",1],"muhammad_amsyarsyah":["rodent","Hamster","",1],"snubbull_biggest_fan":["dog","Dog","",1],"disregard_im_an_idiot":["cat","Kitten","",1],"madilyn.hanson29":["critter","Capybara","",1],"its_yaboykiel":["lizard","Iguana","",1],"i_luv_my_dogg":["dog","Dog","",1],"leanxrtherulaaaa":["lizard","Chameleon","",1],"christopher.queen04":["snake","Snake","Bo",1],"youngestwolfe":["cat","Cat","",1],"proctrasinatoreheheheheh":["snake","Snake","",1],"prulainey":["dog","Dog","Milo",2],"gigi_11j":["rabbit","Rabbit","",1],"not.rianax":["rodent","Rat","",1],"kaiya_notf0und":["cat","Cat","",1],"qween.najee":["cat","Cat","",1],"k.alle.n":["cat","Cat","Louis",1],"kaatarina.knezeviic":["rabbit","Rabbit","Sebastian",1],"luci_bran1":["dog","Dog","",1],"av202918":["dog","Dog","",1],"anisehenderson":["snake","Snake","",1],"publiczna_zvxia":["cat","Cat","",1],"raylinthedog":["dog","Dog","",1],"racingryan_10":["dog","Dog","",1],"nevoc97":["rodent","Hamster","Floofles",1],"playnkatxh5_":["dog","Dog","Asher",1],"rylan.rahhhhh":["cat","Cat","",1],"djjdafool":["dog","Doberman","Nala",1],"jezze8456":["dog","Dog","",1],"jimathoythreelegs69":["lizard","Bearded dragon","Buckshot",1],"xo.eleanor6":["cat","Kitten","",1],"delfino_80m":["dog","Dog","",1],"saip_an77":["dog","Dog","Gus",1],"jcpett02":["dog","Rottweiler","",1],"moon_dxll_":["dog","Dog","",1],"calmals_":["bird","Macaw","",1],"lila.giardina11":["cat","Cat","",1],"milehighmagic200":["dog","Dog","",1],"i.like.music.wby":["rodent","Rat","",1],"kaylancota":["cat","Cat","Teddy",1],"nelehbella33":["turtle","Turtle","",1],"haylerhtoo16":["cat","Cat","",1],"cort14332":["dog","Corgi","",1],"evilervoice":["dog","Dog","",2],"boomer_ng.b_nd1t":["cat","Cat","",1],"itslazy32":["dog","Dog","",3],"bahbahq40":["dog","Dog","Milo",1],"hii_.maddy.m23":["dog","Dog","Tiny",1],"djp2071":["dog","Husky","",1],"james_moriarty_smyth":["rodent","Guinea pig","",1],"ls123234":["dog","Dog","",1],"idkaskj0hn":["dog","Dog","",1],"fgarc1990":["dog","Dog","John",1],"itsjst_miya":["rodent","Ferret","",1],"emil.uwuu":["lizard","Lizard","Gregory",1],"arab.ba3":["dog","Dog","",1],"peterfleury12":["cat","Cat","",1],"bugthecrow":["fish","Fish","North",1],"mei2fine":["dog","Dog","",1],"armando_is_short":["dog","Beagle","",1],"lincolnpark_1211":["dog","Dog","",1],"vapor_wavez_":["dog","Dog","",1],"snakeskinner_77":["dog","Dog","",1],"ropapi_2004":["dog","Dog","",1],"dead_or_aliv54":["cat","Cat","",1],"lume.rico":["bird","Parrot","",1],"justin155179":["critter","Raccoon","",1],"bernardo.ethur":["bird","Bird","",1],"b3nj101":["dog","Dog","",1],"one_nice_neko":["cat","Cat","",1],"uhh.david.rea":["dog","Dog","",1],"joshua.peto":["fish","Fish","",1],"fishy_chu":["rabbit","Rabbit","",1],"champagnemammmmmi":["dog","Dog","Jasper",1],"wilhelm_page":["dog","Dog","",1],"whyso_serious26019":["dog","Dog","",1],"khacv2026":["dog","Dog","",1],"rushca_ben_akcasyar_gyger":["cat","Cat","",1],"unknownartist_013":["cat","Cat","",1],"rafa_.6958":["bird","Parrot","",1],"maira_32105":["dog","Dog","",1],"henrymartinez6282":["cat","Cat","",1],"kingsamp12g":["dog","Dog","Kilo",1],"eodmc07":["critter","Goat","",1],"brookec888":["dog","Dog","",1],"lilly_sapp7":["critter","Hedgehog","",1],"zataro_kero":["rodent","Hamster","Stain",1],"connorcanaday12":["cat","Cat","",1],"marcelroestenberg":["bird","Parrot","",1],"eddie9yay":["rodent","Gerbil","Fred",1],"krypto_814":["cat","Cat","",3],"yagirl_prettypetybrownskin":["dog","Puppy","",1],"benjabuddike":["fish","Goldfish","Jeff",1],"tkochick8":["dog","Dog","",1],"vito14__n_p_c":["dog","Dog","",1],"zebastian475":["dog","Chihuahua","",1],"virag_viktor_e46":["cat","Cat","",2],"dq_0.x.0":["turtle","Turtle","",1],"hennybee1234":["cat","Cat","Tony",1],"nisaaa_st9":["cat","Cat","",1],"1luhhshaud":["dog","Dog","Dior",1],"lyn_4k":["dog","Dog","",1],"g1zimo":["cat","Cat","",1],"anna_080306":["dog","German shepherd","",1],"odtx_auden":["cat","Cat","Dexter",1],"l_dr2010":["cat","Cat","Licorice",1],"tigress8373":["dog","Dog","",1],"rocket_mon1977":["cat","Cat","",1],"david_king_21":["dog","Dog","",1],"micr_odraccc":["dog","Dog","Ziggy",1],"gonzalez_bryson":["dog","Dog","",1],"not_h3rementally._":["snake","Snake","",1],"doa_draccbaby":["dog","Dog","",1],"amy.m530":["cat","Cat","",1],"your_gift3r":["dog","Dog","",1],"the_angelmishelle":["dog","Dog","Noodles",1],"breezyjk23":["cat","Cat","",1],"il_fuoth":["cat","Cat","Alex",1]};
-const LEVELS = [["B1","Entry and decontamination",1,10000],["B2","Command and medical",10001,20000],["B3","The garden",20001,30000],["B4","Commons and pantry",30001,40000],["B5","Main dormitory",40001,70000],["B6","The armory",70001,85000],["B7","Engineering",85001,100000]];
-const JOB = {B1:["gas mask","Your gas mask hangs by the door. Decontamination drills at dawn."],B2:["med kit","Your med kit is on the hook. Someone always needs a doctor."],B3:["watering can","Your watering can is by the bunk. The grow-lights never really switch off."],B4:["cooking pot","Your pot and ladle are on the hook. Dinner is at 18:00, sharp."],B5:["alarm clock","Your clock is on the shelf. Lights out at 22:00."],B6:["helmet","Your helmet is on the hook, boots by the door. Night watch starts at midnight."],B7:["wrench","Your wrench is on the hook. You can feel the generators through the floor."]};
-const SHOP = [
-  {id:"blanket",n:"Red blanket",d:"Warmer than the green ones.",c:10},
-  {id:"poster",n:"Sunset poster",d:"What the sky used to look like.",c:20},
-  {id:"lights",n:"String lights",d:"Salvaged from the surface.",c:30},
-  {id:"rug",n:"Braided rug",d:"No more cold feet.",c:25},
-  {id:"plant",n:"Potted plant",d:"A cutting from the garden.",c:25},
-  {id:"radio",n:"Old radio",d:"Mostly static. Mostly.",c:35},
-  {id:"petbed",n:"Pet cushion",d:"For your bunkmate.",c:20,pet:true},
-  {id:"flag",n:"Bunker banner",d:"Gold on black. Show your floor.",c:50}
-];
-const $ = id => document.getElementById(id), fmt = n => n.toLocaleString("en-US");
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) } return h >>> 0 };
-const qs = new URLSearchParams(location.hash.slice(1) || location.search);
-const handle = (qs.get("h") || "").toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9._]/g, "");
-const bed = parseInt(qs.get("b"), 10);
-const L = LEVELS.find(l => bed >= l[2] && bed <= l[3]);
-const app = $("app");
-if (!handle || !L) {
-  app.innerHTML = `<div class="lock"><h1>THIS DOOR IS <b>LOCKED</b></h1><p>Find your bed first, then open your room from your door.</p><a class="btn go" href="/" style="display:inline-block;text-decoration:none">Find my bed</a></div>`;
-} else {
-const KEY = "bunkerRoom:" + handle;
-let st = { coins: 0, own: [], on: [] };
-try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s.coins === "number") st = Object.assign(st, s); } catch {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} };
-const pet = PETS[handle] || null;   // [sprite, label, name, count]
-const lvl = L[0], H = hash(handle);
-
-// ---------- sprites ----------
-const pick = (a, k) => a[(H >>> k) % a.length];
-const sp = {
-  cat(x, y, s = 1, alt = 0) {
-    const C = pick([["#e08a3a","#9a4e16","#5a2e0e"],["#2b2b2b","#111","#000"],["#9a9a9a","#6d6d6d","#333"],["#f1ece0","#c9c1ad","#6b6455"],["#c98b4f","#3b2a1d","#3b2a1d"]], 3 + alt);
-    return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-30 12 q-10 -2 -8 -10 q4 -6 12 -2" stroke="${C[1]}" stroke-width="6" fill="none" stroke-linecap="round"/>
-<ellipse cx="0" cy="6" rx="30" ry="14" fill="${C[0]}" stroke="${C[2]}" stroke-width="1.5"/><path d="M-14 -4 q4 8 0 18 M-2 -7 q4 10 0 22 M10 -5 q3 8 0 18" stroke="${C[1]}" stroke-width="2" fill="none" opacity=".7"/>
-<circle cx="26" cy="0" r="12" fill="${C[0]}" stroke="${C[2]}" stroke-width="1.5"/><path d="M17 -8 l2 -10 l7 7z M28 -11 l7 -7 l1 10z" fill="${C[0]}" stroke="${C[2]}" stroke-width="1.2" stroke-linejoin="round"/>
-<path d="M20 0 q3 2 6 0 M29 0 q3 2 6 0" stroke="${C[0] === "#2b2b2b" ? "#9cf04a" : "#2a1606"}" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M30 5 l-2 2 l-2 -2z" fill="#c5476a"/>
-<path d="M16 9 q10 5 20 0" stroke="#c5221f" stroke-width="3" fill="none"/><circle cx="26" cy="13" r="3" fill="#f2c230" stroke="#6b4a12"/></g>`;
-  },
-  dog(x, y, s = 1, alt = 0) {
-    const C = pick([["#c98b4f","#8a5a2b","#3b2a1d"],["#2b2420","#15110e","#000"],["#e6c27a","#b8904a","#5a4220"],["#f1ece0","#b9b09a","#5a5444"],["#8a5a2b","#f1ece0","#2a1b0e"]], 5 + alt);
-    return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-34 0 q-12 -10 -6 -18" stroke="${C[0]}" stroke-width="6" fill="none" stroke-linecap="round"/>
-<ellipse cx="-6" cy="4" rx="32" ry="13" fill="${C[0]}" stroke="${C[2]}" stroke-width="1.5"/><ellipse cx="-10" cy="10" rx="18" ry="5" fill="${C[1]}" opacity=".6"/>
-<path d="M-30 14 h14 M8 14 h16" stroke="${C[2]}" stroke-width="5" stroke-linecap="round"/><path d="M-30 14 h14 M8 14 h16" stroke="${C[0]}" stroke-width="3" stroke-linecap="round"/>
-<circle cx="26" cy="-6" r="12" fill="${C[0]}" stroke="${C[2]}" stroke-width="1.5"/><ellipse cx="38" cy="-2" rx="8" ry="6" fill="${C[0]}" stroke="${C[2]}" stroke-width="1.5"/><circle cx="45" cy="-4" r="2.6" fill="#111"/>
-<path d="M16 -14 q-8 6 -4 18 q6 -4 8 -14z" fill="${C[1]}" stroke="${C[2]}" stroke-width="1.2"/><path d="M26 -8 q3 2 6 0" stroke="#111" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-<path d="M18 4 q10 5 18 0" stroke="#2f7dd1" stroke-width="3" fill="none"/><circle cx="27" cy="8" r="3" fill="#f2c230" stroke="#6b4a12"/></g>`;
-  },
-  rabbit(x, y, s = 1) {
-    const C = pick(["#f1ece0","#b9a58a","#8a8a8a","#5a4632"], 7);
-    return `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="17" ry="14" fill="${C}" stroke="#3a332a" stroke-width="1.5"/><circle cx="-16" cy="2" r="5" fill="#fff" stroke="#3a332a"/>
-<circle cx="13" cy="-10" r="10" fill="${C}" stroke="#3a332a" stroke-width="1.5"/><path d="M9 -18 q-6 -20 0 -24 q5 6 3 24z M16 -18 q2 -20 9 -22 q2 8 -4 23z" fill="${C}" stroke="#3a332a" stroke-width="1.3"/>
-<path d="M11 -36 q1 8 1 16 M20 -36 q-2 8 -4 16" stroke="#e7a1b0" stroke-width="2.4" fill="none"/><circle cx="17" cy="-11" r="1.8" fill="#111"/><circle cx="22" cy="-8" r="1.5" fill="#c5476a"/></g>`;
-  },
-  rodent(x, y, s = 1) {
-    const C = pick(["#e6c27a","#c98b4f","#f1ece0","#8a8a8a"], 9);
-    return `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="14" ry="10" fill="${C}" stroke="#3a332a" stroke-width="1.5"/><circle cx="-4" cy="-9" r="4" fill="${C}" stroke="#3a332a" stroke-width="1.2"/><circle cx="7" cy="-9" r="4" fill="${C}" stroke="#3a332a" stroke-width="1.2"/>
-<circle cx="-4" cy="-9" r="2" fill="#e7a1b0"/><circle cx="7" cy="-9" r="2" fill="#e7a1b0"/><circle cx="8" cy="-2" r="1.6" fill="#111"/><circle cx="13" cy="1" r="1.6" fill="#c5476a"/><path d="M-6 4 q5 3 10 0" stroke="#fff" stroke-width="1.5" fill="none" opacity=".6"/></g>`;
-  },
-  critter(x, y, s = 1) {
-    return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-22 8 ${Array.from({length:10},(_, k)=>`L${-20 + k * 4.2} ${k % 2 ? -22 + Math.abs(k - 5) * 2 : -9 + Math.abs(k - 5)}`).join(" ")} L20 6z" fill="#6b5a44" stroke="#2a2016" stroke-width="1.3" stroke-linejoin="round"/>
-<ellipse cx="0" cy="4" rx="20" ry="13" fill="#8a7458" stroke="#2a2016" stroke-width="1.5"/><circle cx="18" cy="0" r="9" fill="#c9b08a" stroke="#2a2016" stroke-width="1.3"/><circle cx="21" cy="-2" r="1.8" fill="#111"/><circle cx="26" cy="2" r="2" fill="#111"/></g>`;
-  },
-  bird(x, y, s = 1) {
-    const C = pick([["#3fae49","#e8432e"],["#2f7dd1","#f2c230"],["#e8432e","#2f7dd1"],["#f2c230","#3fae49"]], 11);
-    return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-4 8 l-6 22 l8 -4 l4 4z" fill="${C[1]}" stroke="#222" stroke-width="1"/><ellipse cx="0" cy="0" rx="10" ry="15" fill="${C[0]}" stroke="#222" stroke-width="1.3"/>
-<path d="M-6 -2 q-6 10 2 16" stroke="#00000044" stroke-width="3" fill="none"/><circle cx="2" cy="-14" r="8" fill="${C[0]}" stroke="#222" stroke-width="1.3"/><circle cx="4" cy="-15" r="2.6" fill="#fff"/><circle cx="4.5" cy="-15" r="1.4" fill="#111"/>
-<path d="M9 -15 q7 2 3 8 q-3 -2 -4 -4z" fill="#3a332a"/><path d="M-6 15 h12" stroke="#5a4220" stroke-width="2"/></g>`;
-  },
-  fish(x, y) {
-    return `<g transform="translate(${x} ${y})"><ellipse cx="0" cy="14" rx="15" ry="3" fill="#00000055"/><path d="M-16 -6 a17 17 0 1 0 32 0 z" fill="#3aa0ff55" stroke="#bfe0ff" stroke-width="1.6"/><path d="M-14 -6 h28" stroke="#bfe0ff" stroke-width="1.6"/>
-<g class="swim"><ellipse cx="-2" cy="2" rx="7" ry="4.5" fill="#ff8c2a" stroke="#8a3a0a"/><path d="M5 2 l6 -5 v10z" fill="#ff8c2a" stroke="#8a3a0a"/><circle cx="-5" cy="1" r="1.2" fill="#111"/></g>
-<circle cx="8" cy="-1" r="1.3" fill="none" stroke="#bfe0ff"/><circle cx="10" cy="-5" r="1" fill="none" stroke="#bfe0ff"/></g>`;
-  },
-  tank(x, y, inner) {
-    return `<g transform="translate(${x} ${y})"><rect x="-30" y="-22" width="60" height="34" rx="3" fill="#2f4229" stroke="#bfe0ff" stroke-width="1.6"/><rect x="-30" y="-22" width="60" height="34" rx="3" fill="#9fd6ff22"/>
-<rect x="-30" y="6" width="60" height="6" fill="#8a7458"/>${inner}<rect x="-32" y="-25" width="64" height="4" rx="1.5" fill="#3a372c" stroke="#121210"/></g>`;
-  },
-  snake() { return `<path d="M-22 4 q8 -10 16 0 t16 0 t10 -4" stroke="#3fae49" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="21" cy="-1" r="3.6" fill="#3fae49"/><circle cx="22" cy="-2" r="1" fill="#111"/><path d="M24 0 l4 1" stroke="#e8432e" stroke-width="1"/>`; },
-  lizard() { return `<path d="M-24 4 q10 -2 18 0" stroke="#6b8a2e" stroke-width="3" fill="none"/><ellipse cx="2" cy="2" rx="12" ry="5" fill="#9ab045" stroke="#3a4a14"/><circle cx="16" cy="0" r="4.5" fill="#9ab045" stroke="#3a4a14"/><circle cx="17" cy="-1" r="1" fill="#111"/><path d="M-6 6 l-3 5 M8 6 l3 5 M-6 -2 l-3 -4 M8 -2 l3 -4" stroke="#3a4a14" stroke-width="2"/>`; },
-  turtle() { return `<ellipse cx="14" cy="2" rx="5" ry="4" fill="#9ab045" stroke="#3a4a14"/><circle cx="16" cy="1" r="1" fill="#111"/><path d="M-12 6 l-3 4 M8 6 l3 4" stroke="#3a4a14" stroke-width="3"/><path d="M-16 6 q14 -22 28 0z" fill="#6b5a2e" stroke="#2a2016" stroke-width="1.4"/><path d="M-8 0 l6 -6 l6 6 M-2 -6 v-4" stroke="#2a2016" fill="none"/>`; }
-};
-
-// ---------- the room ----------
-const has = id => st.on.includes(id);
-function bowl(x, y, name) {
-  return `<ellipse cx="${x}" cy="${y + 12}" rx="26" ry="7" fill="#00000055"/><path d="M${x - 24} ${y} h48 l-6 12 h-36z" fill="#c5221f" stroke="#121210" stroke-width="1.5"/><ellipse cx="${x}" cy="${y}" rx="24" ry="5" fill="#8a2a22"/>` +
-    (name ? `<text x="${x}" y="${y + 11}" text-anchor="middle" ${name.length > 7 ? `textLength="40" lengthAdjust="spacingAndGlyphs"` : ""} style="font:400 9px Anton,sans-serif;fill:#ffd9d9;letter-spacing:.08em">${esc(name.toUpperCase())}</text>` : "");
-}
-function jobItem() {
-  const g = (b) => `<line x1="44" y1="84" x2="44" y2="94" stroke="#121210" stroke-width="2"/><g transform="translate(44 112)">${b}</g>`;
-  return g({
-    B1: `<ellipse cx="0" cy="0" rx="17" ry="19" fill="#3a3a32" stroke="#121210" stroke-width="1.5"/><circle cx="-7" cy="-5" r="6" fill="#9fd6ff66" stroke="#121210" stroke-width="2"/><circle cx="7" cy="-5" r="6" fill="#9fd6ff66" stroke="#121210" stroke-width="2"/><circle cx="0" cy="11" r="7" fill="#5e5a48" stroke="#121210" stroke-width="1.5"/>`,
-    B2: `<rect x="-20" y="-16" width="40" height="30" rx="4" fill="#d6d2c2" stroke="#121210" stroke-width="1.5"/><rect x="-4" y="-11" width="8" height="20" fill="#c5221f"/><rect x="-10" y="-5" width="20" height="8" fill="#c5221f"/>`,
-    B3: `<path d="M-14 -8 h20 l2 22 h-24z" fill="#3fae49" stroke="#121210" stroke-width="1.5"/><path d="M8 -4 l16 -10" stroke="#3fae49" stroke-width="5" stroke-linecap="round"/><path d="M-12 -8 q8 -14 18 0" stroke="#121210" stroke-width="2.5" fill="none"/>`,
-    B4: `<path d="M-20 -6 h40 v10 q0 12 -20 12 q-20 0 -20 -12z" fill="#8a8670" stroke="#121210" stroke-width="1.5"/><rect x="-24" y="-9" width="48" height="5" rx="2" fill="#5e5a48" stroke="#121210"/><path d="M10 -26 v18 M10 -26 q-6 -2 -8 4" stroke="#c9c1ad" stroke-width="3" fill="none"/>`,
-    B5: `<circle cx="0" cy="0" r="16" fill="#e8432e" stroke="#121210" stroke-width="1.5"/><circle cx="0" cy="0" r="11" fill="#f1ece0"/><path d="M0 0 v-8 M0 0 h6" stroke="#121210" stroke-width="2"/><circle cx="-11" cy="-15" r="5" fill="#f2c230" stroke="#121210"/><circle cx="11" cy="-15" r="5" fill="#f2c230" stroke="#121210"/>`,
-    B6: `<path d="M-20 6 q0 -24 20 -24 q20 0 20 24z" fill="#4f5a3a" stroke="#121210" stroke-width="1.5"/><rect x="-23" y="4" width="46" height="5" rx="2" fill="#3a4229" stroke="#121210"/><path d="M-12 -8 h24" stroke="#00000044" stroke-width="2"/>`,
-    B7: `<path d="M-4 -22 a9 9 0 1 0 8 0 v7 h-8z" fill="#9a9a9a" stroke="#121210" stroke-width="1.5"/><rect x="-3.5" y="-8" width="7" height="30" rx="2" fill="#9a9a9a" stroke="#121210" stroke-width="1.5"/>`
-  }[lvl]);
-}
-function draw() {
-  const W = [], a = s => W.push(s);
-  a(`<defs><linearGradient id="wl" x1="0" x2="1"><stop offset="0" stop-color="#3f3c30"/><stop offset=".5" stop-color="#6e6a56"/><stop offset="1" stop-color="#3a372c"/></linearGradient>
-<linearGradient id="fl" y1="0" y2="1" x1="0" x2="0"><stop offset="0" stop-color="#2b2820"/><stop offset="1" stop-color="#15130f"/></linearGradient>
-<radialGradient id="lg" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#ffd27a" stop-opacity=".55"/><stop offset=".6" stop-color="#ffc23a" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
-<linearGradient id="bl" y1="0" y2="1" x1="0" x2="0"><stop offset="0" stop-color="${has("blanket") ? "#b8322a" : "#4f6b46"}"/><stop offset="1" stop-color="${has("blanket") ? "#7a1c16" : "#2f4229"}"/></linearGradient>
-<linearGradient id="sun" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f28c3a"/><stop offset=".6" stop-color="#e8432e"/><stop offset="1" stop-color="#5a1a3a"/></linearGradient></defs>`);
-  a(`<rect width="300" height="400" fill="url(#wl)"/>`);
-  for (let r = 0; r < 8; r++) { a(`<line x1="0" y1="${40 + r * 34}" x2="300" y2="${40 + r * 34}" stroke="#00000033"/>`); for (let c = 0; c < 5; c++) { const x = c * 60 + (r % 2) * 30; a(`<line x1="${x}" y1="${40 + r * 34}" x2="${x}" y2="${74 + r * 34}" stroke="#00000026"/>`); } }
-  a(`<path d="M0 0 H300 V22 Q150 52 0 22Z" fill="#24221b"/><path d="M0 22 Q150 52 300 22" stroke="#8a8068" stroke-width="3" fill="none"/>`);
-  if (has("lights")) { const cols = ["#ff5a4a","#f2c230","#3fae49","#3aa0ff","#ff7ad9"]; for (let k = 0; k < 15; k++) { const t = (k + .5) / 15, x = t * 300, y = 22 + 30 * (1 - (2 * t - 1) ** 2) + 8; a(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="${cols[k % 5]}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" fill="${cols[k % 5]}" opacity=".18"/>`); } }
-  a(`<rect y="300" width="300" height="100" fill="url(#fl)"/><rect y="298" width="300" height="4" fill="#121210"/>`);
-  a(`<line x1="150" y1="36" x2="150" y2="58" stroke="#121210" stroke-width="2"/><path d="M136 58 h28 l6 12 h-40z" fill="#2e2c24" stroke="#121210"/><ellipse cx="150" cy="71" rx="12" ry="3" fill="#ffe2a0"/><rect x="0" y="66" width="300" height="334" fill="url(#lg)"/>`);
-  // plate
-  const hT = "@" + handle;
-  a(`<rect x="182" y="82" width="98" height="40" rx="3" fill="#ffc23a" stroke="#6b4a12" stroke-width="1.5"/><text x="231" y="99" text-anchor="middle" style="font:400 15px Anton,sans-serif;fill:#1a1206">BED ${fmt(bed)}</text><text x="231" y="114" text-anchor="middle" ${hT.length > 14 ? `textLength="86" lengthAdjust="spacingAndGlyphs"` : ""} style="font:600 10px Inter,sans-serif;fill:#3a2606">${esc(hT)}</text>`);
-  a(jobItem());
-  if (has("poster")) a(`<g transform="translate(78 78)"><rect width="46" height="56" fill="#f1ece0" stroke="#121210" stroke-width="1.5"/><rect x="4" y="4" width="38" height="40" fill="url(#sun)"/><circle cx="23" cy="30" r="9" fill="#ffd27a"/><path d="M4 36 l10 -8 l8 6 l10 -10 l10 10 v10 h-38z" fill="#2a1b2e"/><text x="23" y="52" text-anchor="middle" style="font:400 6px Anton,sans-serif;fill:#3a2606;letter-spacing:.1em">THE SURFACE</text></g>`);
-  a(`<rect x="0" y="140" width="300" height="6" fill="#2e2c24"/><circle cx="96" cy="143" r="5" fill="#4b4838" stroke="#121210"/><circle cx="214" cy="143" r="5" fill="#4b4838" stroke="#121210"/>`);
-  if (has("flag")) a(`<g transform="translate(240 146)"><path d="M0 0 h40 v50 l-20 -10 l-20 10z" fill="#15130f" stroke="#121210"/><path d="M0 0 h40" stroke="#f2c230" stroke-width="3"/><text x="20" y="24" text-anchor="middle" style="font:400 13px Anton,sans-serif;fill:#f2c230">${lvl}</text><path d="M12 30 l8 -5 l8 5" stroke="#f2c230" fill="none" stroke-width="2"/></g>`);
-  if (has("rug")) a(`<ellipse cx="130" cy="338" rx="92" ry="20" fill="#7a3a2a"/><ellipse cx="130" cy="338" rx="80" ry="15" fill="none" stroke="#c98b4f" stroke-width="3" stroke-dasharray="6 4"/><ellipse cx="130" cy="338" rx="58" ry="9" fill="none" stroke="#e6c27a" stroke-width="2"/>`);
-  // bunk
-  a(`<rect x="18" y="196" width="208" height="10" fill="#4b4838" stroke="#121210" stroke-width="1.5"/><rect x="18" y="160" width="8" height="140" fill="#3a372c" stroke="#121210"/><rect x="218" y="160" width="8" height="140" fill="#3a372c" stroke="#121210"/>
-<rect x="26" y="178" width="192" height="20" rx="5" fill="url(#bl)" stroke="#121210" stroke-width="1.5"/><path d="M60 180 q20 6 40 0 M120 182 q24 7 48 0" stroke="#00000055" fill="none" stroke-width="1.5"/>
-<rect x="30" y="166" width="42" height="16" rx="7" fill="#d6d2c2" stroke="#121210"/><rect x="18" y="206" width="208" height="12" fill="#1b1a15"/>
-<rect x="70" y="252" width="96" height="46" rx="3" fill="#4f5a3a" stroke="#121210" stroke-width="1.5"/><rect x="70" y="262" width="96" height="5" fill="#00000040"/><rect x="112" y="270" width="12" height="10" rx="2" fill="#f2c230" stroke="#121210"/>`);
-  if (has("radio")) a(`<g transform="translate(140 238)"><rect x="-18" y="-12" width="36" height="24" rx="4" fill="#8a5a2b" stroke="#121210" stroke-width="1.5"/><circle cx="-7" cy="0" r="7" fill="#2b2420"/><circle cx="-7" cy="0" r="7" fill="none" stroke="#c9c1ad" stroke-dasharray="2 2"/><rect x="3" y="-5" width="11" height="4" fill="#ffd27a"/><circle cx="9" cy="6" r="2.5" fill="#c9c1ad"/><path d="M10 -12 l8 -12" stroke="#121210" stroke-width="1.5"/></g>`);
-  if (has("plant")) a(`<g transform="translate(36 352)"><path d="M-12 0 h24 l-3 22 h-18z" fill="#b8611f" stroke="#121210" stroke-width="1.5"/><path d="M0 0 q-14 -20 -6 -34 M0 0 q2 -26 12 -32 M0 0 q16 -14 18 -24 M0 0 q-20 -6 -22 -18" stroke="#3fae49" stroke-width="5" fill="none" stroke-linecap="round"/></g>`);
-  // pet
-  if (pet) {
-    const [k, , name, n] = pet; const two = n > 1;
-    if (k === "cat") { if (has("petbed")) a(`<ellipse cx="160" cy="182" rx="40" ry="8" fill="#2f7dd1" stroke="#121210"/>`); if (two) a(sp.cat(100, 170, .85, 1)); a(sp.cat(160, 168)); a(bowl(256, 318, name.split(" & ")[0])); }
-    else if (k === "dog") { if (has("petbed")) a(`<ellipse cx="160" cy="336" rx="62" ry="14" fill="#2f7dd1" stroke="#121210" stroke-width="1.5"/><ellipse cx="160" cy="333" rx="50" ry="9" fill="#5a9be0"/>`); if (two) a(sp.dog(84, 316, .8, 1)); a(sp.dog(160, 326)); a(bowl(256, 318, name.split(" & ")[0])); }
-    else if (k === "fish") { a(sp.fish(96, 240)); a(`<text x="96" y="268" text-anchor="middle" style="font:400 8px Anton,sans-serif;fill:#f2c230;letter-spacing:.08em">${esc((name || "").toUpperCase())}</text>`); }
-    else if (k === "bird") { a(`<ellipse cx="262" cy="318" rx="18" ry="5" fill="#00000055"/><rect x="259" y="238" width="6" height="80" fill="#5a4220" stroke="#121210"/><rect x="244" y="236" width="36" height="5" rx="2" fill="#5a4220" stroke="#121210"/>`); a(sp.bird(262, 220)); if (name) a(`<text x="262" y="334" text-anchor="middle" style="font:400 9px Anton,sans-serif;fill:#f2c230;letter-spacing:.08em">${esc(name.toUpperCase())}</text>`); }
-    else if (k === "rabbit") { if (has("petbed")) a(`<ellipse cx="196" cy="340" rx="34" ry="9" fill="#2f7dd1"/>`); a(sp.rabbit(196, 330)); if (two) a(sp.rabbit(150, 336, .8)); a(bowl(256, 318, name)); }
-    else if (k === "rodent") { a(`<g transform="translate(262 300)"><rect x="-30" y="-36" width="60" height="44" rx="4" fill="none" stroke="#c9c1ad" stroke-width="1.5"/>${Array.from({length:9},(_, i)=>`<line x1="${-27 + i * 6.7}" y1="-36" x2="${-27 + i * 6.7}" y2="8" stroke="#c9c1ad" stroke-width="1"/>`).join("")}<rect x="-32" y="6" width="64" height="5" fill="#8a7458"/>${sp.rodent(0, -4, 1)}</g>`); if (name) a(`<text x="262" y="326" text-anchor="middle" style="font:400 9px Anton,sans-serif;fill:#f2c230;letter-spacing:.08em">${esc(name.toUpperCase())}</text>`); }
-    else if (["snake","lizard","turtle"].includes(k)) { a(sp.tank(258, 292, sp[k]())); if (name) a(`<text x="258" y="318" text-anchor="middle" style="font:400 9px Anton,sans-serif;fill:#f2c230;letter-spacing:.08em">${esc(name.toUpperCase())}</text>`); }
-    else { a(sp.critter(200, 330)); a(bowl(256, 318, name)); }
-  }
-  a(`<path d="M0 60 L14 66 V312 L0 318Z" fill="#5e5a48" stroke="#121210" stroke-width="1.5"/>`);
-  $("room").innerHTML = W.join("");
-  $("coinN").textContent = fmt(st.coins);
-}
-function shop() {
-  $("shop").innerHTML = SHOP.filter(i => !i.pet || pet).map(i => {
-    const own = st.own.includes(i.id), on = has(i.id);
-    return `<div class="it"><div class="n">${i.n}</div><div class="d">${i.d}</div>` +
-      (own ? `<button data-t="${i.id}" class="${on ? "on" : ""}">${on ? "In your room" : "Put it back"}</button>` : `<button data-b="${i.id}" ${st.coins < i.c ? "disabled" : ""}>Buy · ${i.c} coins</button>`) + `</div>`;
-  }).join("");
-}
-
-const petLine = pet ? (() => { const [k, lab, name, n] = pet; const who = name || (n > 1 ? `your ${lab.toLowerCase()}s` : `your ${lab.toLowerCase()}`);
-  return { cat: `${name || "Your cat"} found the warm spot on your bunk before you did.`, dog: `${name || "Your dog"} won't leave your side. ${n > 1 ? "Neither will the other one." : "Good."}`, fish: `${name || "Your fish"} has the best view in the room.`, bird: `${name || "Your bird"} watches the door. Nothing gets past.`,
-    rabbit: `${name || "Your rabbit"} already dug a corner of the rug.`, rodent: `${name || "Your " + lab.toLowerCase()} runs laps all night. You'll get used to it.`, snake: `${name || "Your snake"} likes the warm pipes.`, lizard: `${name || "Your " + lab.toLowerCase()} likes the warm pipes.`, turtle: `${name || "Your " + lab.toLowerCase()} is in no hurry. Nobody down here is.`, critter: `${name || "Your " + lab.toLowerCase()} made it down. Nobody asked how.` }[k]; })() : "";
-const mate = pet ? `<div class="mate"><div><small>BUNKMATE</small><b>${esc((pet[2] ? pet[2] + " · " : "") + (pet[3] > 1 ? pet[3] + " " + (/fish|sheep/i.test(pet[1]) ? pet[1] : pet[1] + "s") : pet[1])).toUpperCase()}</b></div></div>` : "";
-app.innerHTML = `
-<div class="top"><a class="back" href="/">← Back to your door</a><div class="coins" aria-label="Coins"><i></i><span id="coinN">0</span></div></div>
-<div class="k">${lvl} · ${esc(L[1].toUpperCase())} · BED ${fmt(bed)}</div>
-<h1>YOUR ROOM, <b>@${esc(handle.toUpperCase())}</b></h1>
-<svg id="room" viewBox="0 0 300 400" role="img" aria-label="Your bunker room"></svg>
-${mate}
-<p>${petLine} ${JOB[lvl][1]}</p>
-<div class="row"><button class="btn go" id="play" type="button">Patch the pipes · earn coins</button></div>
-<h2>FIX UP YOUR ROOM</h2>
-<div class="shop" id="shop"></div>
-<p class="fine">Coins are earned, never bought. Your room is saved on this phone for now.${pet ? "" : " Asked for a pet in the comments? Your bunkmate moves in at the next manifest update."}</p>`;
-draw(); shop();
-window.gcEv && gcEv(pet ? "room-open-pet" : "room-open");
-$("shop").addEventListener("click", e => {
-  const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.b) { const i = SHOP.find(x => x.id === b.dataset.b); if (st.coins >= i.c) { window.gcEv && gcEv("buy-" + i.id); st.coins -= i.c; st.own.push(i.id); st.on.push(i.id); } }
-  if (b.dataset.t) { const id = b.dataset.t; st.on = has(id) ? st.on.filter(x => x !== id) : st.on.concat(id); }
-  save(); draw(); shop();
-});
-
-// ---------- mini game: patch the pipes ----------
-const G = $("game"), gs = $("gsvg");
-const JOINTS = []; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) JOINTS.push([60 + c * 90, 60 + r * 90]);
-let game = null;
-function board() {
-  let s = `<rect width="300" height="300" fill="#2b2820"/>`;
-  for (let r = 0; r < 3; r++) s += `<rect x="20" y="${54 + r * 90}" width="260" height="12" fill="#5e5a48" stroke="#121210"/>`;
-  for (let c = 0; c < 3; c++) s += `<rect x="${54 + c * 90}" y="20" width="12" height="260" fill="#4b4838" stroke="#121210"/>`;
-  JOINTS.forEach(([x, y]) => s += `<circle cx="${x}" cy="${y}" r="13" fill="#6e6a56" stroke="#121210" stroke-width="2"/>`);
-  return s + `<g id="leaks"></g><g id="fx"></g>`;
-}
-function startGame() {
-  gs.innerHTML = board(); G.classList.add("on"); window.gcEv && gcEv("game-start"); $("gmsg").innerHTML = "Tap the leaks before the room floods.";
-  game = { t: 30, flood: 0, got: 0, live: new Map(), next: 0, over: false, last: performance.now() };
-  requestAnimationFrame(tick);
-}
-function spawn() {
-  const free = JOINTS.map((_, i) => i).filter(i => !game.live.has(i)); if (!free.length) return;
-  const i = free[Math.floor(Math.random() * free.length)], [x, y] = JOINTS[i];
-  const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("class", "leak"); g.dataset.i = i;
-  g.innerHTML = `<circle cx="${x}" cy="${y}" r="30" fill="transparent"/><circle cx="${x}" cy="${y}" r="14" fill="none" stroke="#3aa0ff" stroke-width="3"/>` +
-    [-12, 0, 12].map(dx => `<circle class="spray" cx="${x + dx}" cy="${y + 10}" r="3" fill="#7cc4ff" style="animation-delay:${Math.random() * .5}s"/>`).join("");
-  $("leaks").appendChild(g); game.live.set(i, { g, born: game.t });
-}
-gs.addEventListener("pointerdown", e => {
-  if (!game || game.over) return; const g = e.target.closest(".leak"); if (!g) return;
-  const i = +g.dataset.i, [x, y] = JOINTS[i]; g.remove(); game.live.delete(i); game.got++;
-  const fx = document.createElementNS("http://www.w3.org/2000/svg", "text"); fx.setAttribute("x", x); fx.setAttribute("y", y - 18); fx.setAttribute("text-anchor", "middle"); fx.setAttribute("class", "pop");
-  fx.setAttribute("style", "font:400 16px Anton,sans-serif;fill:#ffc23a"); fx.textContent = "+1"; $("fx").appendChild(fx); setTimeout(() => fx.remove(), 400);
-  const pt = document.createElementNS("http://www.w3.org/2000/svg", "g"); pt.setAttribute("class", "pop"); pt.innerHTML = `<circle cx="${x}" cy="${y}" r="9" fill="#9a9a9a" stroke="#121210" stroke-width="2"/><path d="M${x - 6} ${y - 6} l12 12 M${x + 6} ${y - 6} l-12 12" stroke="#5e5a48" stroke-width="2"/>`;
-  $("fx").appendChild(pt); setTimeout(() => pt.remove(), 400);
-});
-function tick(now) {
-  if (!game || game.over) return;
-  const dt = Math.min(.1, (now - game.last) / 1000); game.last = now; game.t -= dt;
-  const pace = 1.1 - .7 * (1 - game.t / 30);           // gets faster
-  game.next -= dt; if (game.next <= 0) { spawn(); game.next = pace * (.6 + Math.random() * .6); }
-  game.flood += dt * game.live.size * 2.4;
-  $("gflood").style.width = Math.min(100, game.flood) + "%"; $("gtime").textContent = Math.max(0, Math.ceil(game.t));
-  if (game.t <= 0 || game.flood >= 100) return endGame(game.flood >= 100);
-  requestAnimationFrame(tick);
-}
-function endGame(flooded) {
-  game.over = true; const earned = game.got;
-  window.gcEv && gcEv("game-score-" + (earned < 10 ? "0-9" : earned < 20 ? "10-19" : earned < 40 ? "20-39" : earned < 70 ? "40-69" : "70plus"));
-  st.coins += earned; save(); draw(); shop();
-  $("gmsg").innerHTML = `<b>${flooded ? "FLOODED" : "PIPES HOLDING"}</b>You patched ${earned} leak${earned === 1 ? "" : "s"}. +${earned} coins.<div class="row"><button class="btn" id="gx" type="button">Back to my room</button><button class="btn go" id="gy" type="button">Again</button></div>`;
-  $("gx").onclick = () => G.classList.remove("on"); $("gy").onclick = startGame;
-}
-$("play").addEventListener("click", startGame);
-}
-}
-</script>
+<script src="pets.js"></script><script src="items.js"></script><script src="games.js"></script><script src="room.js"></script>
 </body></html>
