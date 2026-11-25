@@ -40,7 +40,7 @@ start(h) {
     for (const [i, L] of g.live) { L.age += dt; if (L.gold && L.age > L.life) { L.n.remove(); g.live.delete(i); } }
     const wet = [...g.live.values()].filter(L => !L.gold).length; if (wet >= 3) g.combo = 0;
     g.flood += dt * wet * 2.2; h.bar(g.flood); h.hud(`${Math.ceil(Math.max(0, g.t))}s · ${g.score} pts`);
-    if (g.t <= 0 || g.flood >= 100) { g.over = true; h.end(g.score, g.flood >= 100 ? "The room flooded." : "The pipes are holding."); }
+    if (g.t <= 0 || g.flood >= 100) { g.over = true; h.end(Math.min(60, Math.round(g.score * .45)), g.flood >= 100 ? "The room flooded." : "The pipes are holding."); }
   });
   return () => g.over = true;
 }});
