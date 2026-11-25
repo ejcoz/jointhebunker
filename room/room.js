@@ -183,10 +183,10 @@ const PETASK = `<div class="petask"><div class="pa-ic">🐾</div><div class="pa-
 const COATS = { cat: ["Ginger", "Black", "Grey", "White", "Brown"], dog: ["Tan", "Black", "Golden", "White", "Brown & white"], rabbit: ["White", "Fawn", "Grey", "Brown"], rodent: ["Golden", "Ginger", "White", "Grey"], bird: ["Green", "Blue", "Red", "Yellow"] };
 const mate = pet ? `<div class="mate"><div style="flex:1"><small>BUNKMATE</small><b>${esc((pet[2] ? pet[2] + " · " : "") + (pet[3] > 1 ? pet[3] + " " + (/fish|sheep/i.test(pet[1]) ? pet[1] : pet[1] + "s") : pet[1])).toUpperCase()}</b></div>${COATS[pet[0]] ? `<button class="mini" id="styleBtn" type="button">Style ${esc(pet[2] ? pet[2].split(" & ")[0] : "them")}</button>` : ""}</div>` : "";
 app.innerHTML = `
-<div class="top"><a class="back" href="/">← Back to your door</a><div class="coins" aria-label="Coins"><i></i><span id="coinN">0</span></div></div>
-<div class="k">${lvl} · ${esc(L[1].toUpperCase())} · BED ${fmt(bed)}</div>
-<h1>YOUR ROOM, <b>@${esc(handle.toUpperCase())}</b></h1>
+<div class="top"><a class="back" href="/">← Hallway</a><div class="coins" aria-label="Coins"><i></i><span id="coinN">0</span></div></div>
 <div class="roomwrap"><svg id="room" viewBox="0 0 300 400" role="img" aria-label="Your bunker room"></svg></div>
+<div class="rtitle"><h1>YOUR ROOM</h1><div class="k">${lvl} · BED ${fmt(bed)}</div></div>
+<div id="dockSlot"></div>
 ${pet ? mate : PETASK}
 <div id="coats"></div>
 <p>${petLine} ${JOB[lvl]}</p>

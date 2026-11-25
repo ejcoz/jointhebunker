@@ -128,6 +128,89 @@ a.follow{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;b
 .levels .b8{border-color:var(--red)}.levels .b8 b{color:var(--red)}
 footer{margin-top:28px;color:var(--muted);font-size:13px}
 @media(prefers-reduced-motion:reduce){.ash{display:none}.tag.show{animation:none}}
+
+/* ===== 2026-11 redesign: full-bleed scenes, one main button per screen, tabs ===== */
+body{background:#120c08;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.ash{display:none}
+main{max-width:520px;padding:0 0 24px;position:relative}
+.hud{position:absolute;top:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 14px}
+.hud [hidden]{display:none!important}
+.hud .logo{white-space:nowrap;font:400 18px Anton,sans-serif;letter-spacing:2px;color:var(--gold);text-decoration:none;text-shadow:0 2px 8px #000}
+.chip{max-width:62vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;background:rgba(11,7,5,.74);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);font:600 13px Inter,sans-serif;border:0}
+button.chip{min-height:36px;font-size:13px}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block}
+body.found #hudR{color:var(--gold)}
+body.found #hudR .dot{display:none}
+.grid{display:flex;flex-direction:column;gap:0;margin:0}
+.scene,.desk{display:contents}
+.desk{background:none;border:0;padding:0}
+.fig{order:1;aspect-ratio:3/4;max-height:none;border-radius:0;width:100%}
+.fig::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg,rgba(18,12,8,.8) 0,rgba(18,12,8,0) 15%,rgba(18,12,8,0) 68%,#120c08 99%)}
+.blk{z-index:2}.cap{z-index:3;bottom:78px;font-size:15px;text-align:right}
+body.found .cap{display:none}
+#form{order:2;position:relative;z-index:4;margin:-64px 16px 0}
+#form h1{font-size:44px;line-height:1}
+#form .lede{margin:6px 0 14px;font-size:15px}
+#form label{font:600 12px Inter,sans-serif;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.field{flex-wrap:nowrap;gap:8px}
+.at{flex:1 1 auto}
+input{min-height:56px;border-radius:14px;background:#0b0705}
+button.go{min-height:56px;width:92px;padding:0;border-radius:14px;font:400 20px Anton,sans-serif;letter-spacing:1px;background:var(--gold)}
+.counter{order:3;margin:16px 16px 0;padding:0;background:none;border:0;max-width:none}
+.ct-lbl{display:none}
+.ct-num{font-size:22px;display:inline}
+.ct-of{font-size:14px}
+.ct-bar{margin:6px 0 6px}
+.ct-sub{font:400 12px Inter,sans-serif;color:var(--muted)}
+#levels{display:none}
+footer{margin:28px 16px 0;font-size:12px;color:#7d7560}
+/* found */
+body.found #form{display:none}
+.tag{order:2;position:relative;z-index:4;margin:-70px 16px 0;padding:0;background:none;box-shadow:none;color:var(--ink);border-radius:0}
+.tag::before{display:none}
+.tag .who{font:600 12px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-right:110px}
+.tag .num{font-size:56px;margin:2px 0 4px;color:var(--gold)}
+.tag .num small{font-size:.4em;vertical-align:.7em;color:var(--gold)}
+.tag .lv{font:600 17px Inter,sans-serif}
+.tag .where{margin:4px 0 0;color:var(--muted);font-size:15px}
+.tag .note{margin:10px 0 0;padding-top:10px;border-top:1px dashed #4a3a22;font-size:14px;color:var(--muted)}
+.tag .note a{color:var(--gold)}
+.tag .note a.follow{color:#15100a;text-decoration:none}
+.stamp{top:-2px;right:0;background:transparent;font-size:15px;border-width:2px}
+.stamp,.stamp.ok,.stamp.res{background:transparent}
+.stamp{border-color:var(--red);color:var(--red)}
+.stamp.ok{border-color:var(--grn);color:var(--grn)}
+.stamp.res{border-color:#8a8068;color:#b3aa90}
+.tag.held{background:none}.tag.held .num{color:#8a8068;opacity:.7}
+.tag.zero{background:none;color:#ffd9d9}
+.next{order:3;margin:16px 16px 0}
+.roomcta{margin:0;padding:0;min-height:58px;border-radius:14px;font:400 21px Anton,sans-serif;letter-spacing:1px;box-shadow:0 8px 28px #ffc23a44}
+.roomcta span{font-size:22px}
+.keep{margin:10px 0 0;font-size:13px;color:var(--muted);text-align:center}
+.next .row{justify-content:center;margin-top:8px}
+.next .follow{margin-top:0;font-size:14px;padding:9px 16px}
+.next button.ghost{font-size:14px;min-height:40px}
+#views{order:4;margin:22px 16px 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#views[hidden]{display:none}
+.vhead{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font:600 12px Inter,sans-serif;letter-spacing:.12em;color:var(--muted)}
+.views button.walk{min-height:32px;padding:0;background:none;border:0;color:var(--gold);font:600 13px Inter,sans-serif;letter-spacing:0}
+.views button.tile{display:flex;flex-direction:column;gap:5px;align-items:stretch;min-height:0;padding:0;border:0;border-radius:0;background:none;color:var(--ink);font:600 12px Inter,sans-serif;text-align:left}
+.views button.tile img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:2px solid #3a2d1c;display:block}
+.views button.tile.cur{background:none;color:var(--gold)}
+.views button.tile.cur img{border-color:var(--gold)}
+.views button.tile[hidden]{display:none}
+.views .roomb{display:none!important}
+.flnav{grid-column:1/-1}
+body.found .flnav{display:none}
+#finfo{order:5;margin:16px 16px 0}
+body.found .counter{order:6;margin-top:26px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));height:calc(68px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:#0b0705;border-top:1px solid #2a2016}
+.tabs a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);text-decoration:none;font:600 12px Inter,sans-serif}
+.tabs a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}
+.tabs a.on{color:var(--gold)}
+.tabs a.on::before{content:"";position:absolute;top:0;width:28px;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
+@media(min-width:820px){main{max-width:520px}}
+.tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 </style>
 <script>window.goatcounter={no_onload:true};window.gcQ=[];window.gcEv=n=>{try{if(window.goatcounter.count)window.goatcounter.count({path:n,title:n,event:true});else gcQ.push(n)}catch(e){}};</script>
 <script data-goatcounter="https://jointhebunker.goatcounter.com/count" async src="//gc.zgo.at/count.js" onload="try{goatcounter.count({path:location.pathname});gcQ.splice(0).forEach(gcEv)}catch(e){}"></script>
@@ -135,10 +218,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
 <body>
 <div class="ash" id="ash" aria-hidden="true"></div>
 <main>
-  <nav class="topnav"><a href="/" class="cur" aria-current="page">Find your bed</a><a href="/room/" id="navRoom" hidden>My room</a><a href="/founders/">Founders Wall</a></nav>
-  <div class="stripes" aria-hidden="true"></div>
-  <h1>The lights are on.<br>Find your bed.</h1>
-  <p class="lede">100,000 beds. One is already taken. Type your username and we'll tell you where you sleep.</p>
+  <header class="hud">
+    <a class="logo" href="/" id="hudLogo">JOIN THE BUNKER</a>
+    <button type="button" class="chip back" id="hudBack" hidden>← Find another</button>
+    <span class="chip" id="hudR"><i class="dot"></i><span id="hudNum">…</span> inside</span>
+  </header>
+<div class="grid">
   <div class="counter" id="counter" aria-live="polite">
     <div class="ct-lbl">SURVIVORS INSIDE</div>
     <div class="ct-num"><span id="ctNum">0</span><span class="ct-of"> / 100,000</span></div>
@@ -146,7 +231,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     <div class="ct-sub" id="ctSub"></div>
   </div>
 
-  <div class="grid">
+
     <div class="scene">
       <div class="fig" id="fig" role="img" aria-label="The bunker, and where your bed is">
         <svg id="silo" class="stage on" viewBox="0 0 300 400"></svg>
@@ -159,11 +244,11 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
         <div class="cap" id="cap"></div>
       </div>
       <div class="views" id="views" hidden>
-        <button type="button" data-v="silo">Silo</button>
-        <button type="button" data-v="floor">Your floor</button>
-        <button type="button" data-v="hall">Your bunk</button>
-        <button type="button" data-v="door">Your door</button>
-        <button type="button" data-v="replay">Walk me there again</button>
+        <div class="vhead"><span>LOOK AROUND</span><button type="button" data-v="replay" class="walk">▶ Walk me there</button></div>
+        <button type="button" data-v="silo" class="tile"><img src="/thumbs/silo.jpg" alt="">Silo</button>
+        <button type="button" data-v="floor" class="tile"><img id="tFloor" src="/thumbs/floor-B5.jpg" alt=""><span id="tFloorLbl">Your floor</span></button>
+        <button type="button" data-v="hall" class="tile"><img src="/thumbs/hall.jpg" alt="">Hallway</button>
+        <button type="button" data-v="door" class="tile"><img src="/thumbs/door.jpg" alt="">Your door</button>
         <button type="button" data-v="room" class="roomb" hidden>Open my room</button>
         <span class="flnav"><button type="button" data-v="up" aria-label="Floor above">↑ <span id="upLbl">B1</span></button><button type="button" data-v="down" aria-label="Floor below"><span id="downLbl">B2</span> ↓</button></span>
       </div>
@@ -172,10 +257,12 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
 
     <section class="desk" aria-labelledby="deskTitle">
       <form id="form" autocomplete="off">
+        <h1>Find your bed.</h1>
+        <p class="lede">100,000 beds. One is already taken.</p>
         <label id="deskTitle" for="handle">Your Instagram username</label>
         <div class="field">
           <div class="at"><span>@</span><input id="handle" name="handle" inputmode="text" autocapitalize="none" spellcheck="false" placeholder="yourname" maxlength="40"></div>
-          <button type="submit">Find my bed</button>
+          <button type="submit" class="go">GO</button>
         </div>
         <p class="hint" id="hint">Same username, same bed. Every time.</p>
         <p class="hint" id="dym" hidden>Did you mean <button type="button" class="ghost" id="dymBtn"></button>?</p>
@@ -191,12 +278,8 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
       </div>
 
       <div class="next" id="next">
-        <a class="roomcta" id="roomCta" href="/room/">Open my room <span>→</span></a>
-        <ol>
-          <li>Screenshot your tag.</li>
-          <li>Comment your bed number on the latest Transmission.</li>
-          <li>Follow to keep it. Unfollow and someone else sleeps there.</li>
-        </ol>
+        <a class="roomcta" id="roomCta" href="/room/">OPEN MY DOOR <span>→</span></a>
+        <p class="keep">Follow to keep it. Unfollow and someone else sleeps here.</p>
         <div class="row">
           <a class="follow" href="https://www.instagram.com/jointhebunker/" target="_blank" rel="noopener">Follow @jointhebunker</a>
           <button class="ghost" id="copy" type="button">Copy my bed</button>
@@ -209,6 +292,17 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   <div class="levels" id="levels"></div>
   <footer>A story series by @jointhebunker. Beds are part of the story. Nothing here asks for a password or anything personal. Just your username.</footer>
 </main>
+<nav class="tabs" aria-label="Site">
+  <a href="/" data-t="bed" class="on" aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 18v-6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v6M3 18h18M3 14h18M7 9V6"/></svg>My bed</a>
+  <a href="/room/" data-t="room" id="navRoom"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M2 21h20M14 12h.01"/></svg>My room</a>
+  <a href="/room/" data-t="play"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/></svg>Play</a>
+  <a href="/founders/" data-t="founders"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2l3 6 6 1-4.5 4.5L18 20l-6-3-6 3 1.5-6.5L3 9l6-1z"/></svg>Founders</a>
+</nav>
+<script>(()=>{const t=document.querySelector('.tabs [data-t="play"]');if(!t)return;
+t.addEventListener('click',e=>{const b=document.querySelector('#dock [data-d="play"]');
+if(b&&document.getElementById('room')){e.preventDefault();b.click();return;}
+try{sessionStorage.setItem('bunkerOpenPlay','1')}catch(x){}});})();</script>
+
 
 <script>
 {
@@ -787,7 +881,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
     tag.classList.add("show"); light(L.id); play({ lvl: L.id, bed, handle: key, fno, confirmed }); $("next").classList.add("show"); $("msg").textContent = "";
     try { localStorage.setItem("bunkerHandle", key) } catch {}
     const roomUrl = `/room/#h=${encodeURIComponent(key)}&b=${bed}`;
-    $("roomCta").href = roomUrl; $("navRoom").href = roomUrl; $("navRoom").hidden = false;
+    $("roomCta").href = roomUrl; $("navRoom").href = roomUrl; 
     $("roomCta").onclick = () => { window.gcEv && gcEv("room-cta"); };
     try { localStorage.setItem("bunkerRoomUrl", roomUrl) } catch {}
     if (GO_ROOM) { GO_ROOM = false; window.gcEv && gcEv("room-shortcut"); setTimeout(() => location.href = roomUrl, 900); }
@@ -808,11 +902,44 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   const ash = $("ash");
   ash.innerHTML = Array.from({ length: 40 }, () => `<i style="left:${Math.random() * 100}%;animation-duration:${8 + Math.random() * 10}s;animation-delay:-${Math.random() * 18}s;opacity:${.15 + Math.random() * .35}"></i>`).join("");
 
-  try { const ru = localStorage.getItem("bunkerRoomUrl"); if (ru) { $("navRoom").href = ru; $("navRoom").hidden = false; } } catch {}
+  try { const ru = localStorage.getItem("bunkerRoomUrl"); if (ru) { $("navRoom").href = ru;  } } catch {}
   const QP = new URLSearchParams(location.search);
   if (QP.get("u")) { try { history.replaceState(null, "", "/") } catch {} $("handle").value = QP.get("u"); show(QP.get("u")); }
   else try { const saved = localStorage.getItem("bunkerHandle"); if (saved) { $("handle").value = saved; show(saved) } } catch {}
 }
+</script>
+
+<script>
+// redesign glue: found state, header chips, floor tile picture
+(() => {
+  const $ = id => document.getElementById(id), P = "";
+  const tag = $("tag"), body = document.body;
+  const sync = () => {
+    const found = tag.classList.contains("show");
+    body.classList.toggle("found", found);
+    $("hudLogo").hidden = found; $("hudBack").hidden = !found;
+    if (found) { const t = $("lv").textContent; $("hudR").textContent = /held/i.test(t) ? "Held · " + t.split("·").pop().trim() : t; }
+    else $("hudR").innerHTML = '<i class="dot"></i>' + ($("ctNum").textContent || "…") + " inside";
+  };
+  new MutationObserver(sync).observe(tag, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(() => { if (!body.classList.contains("found")) sync(); }).observe($("ctNum"), { childList: true, characterData: true, subtree: true });
+  const floorPic = () => {
+    const t = (body.classList.contains("found") ? $("lv").textContent : $("cap").textContent) || "";
+    const m = t.match(/B([1-8])/); if (!m) return;
+    $("tFloor").src = m[1] === "8" ? P + "/thumbs/silo.jpg" : P + "/thumbs/floor-B" + m[1] + ".jpg";
+    $("tFloorLbl").textContent = "B" + m[1] + " floor";
+  };
+  new MutationObserver(floorPic).observe($("cap"), { childList: true, characterData: true, subtree: true });
+  new MutationObserver(floorPic).observe($("lv"), { childList: true, characterData: true, subtree: true });
+  $("hudBack").addEventListener("click", () => {
+    const sb = document.querySelector('#views [data-v="silo"]'); if (sb) sb.click();
+    tag.classList.remove("show", "held", "zero"); $("next").classList.remove("show");
+    $("views").hidden = true; $("finfo").hidden = true;
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+    const h = $("handle"); h.value = ""; setTimeout(() => h.focus(), 300);
+  });
+  sync(); floorPic();
+})();
 </script>
 </body>
 </html>
