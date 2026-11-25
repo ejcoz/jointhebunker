@@ -7,6 +7,18 @@ const $ = id => document.getElementById(id), fmt = n => n.toLocaleString("en-US"
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) } return h >>> 0 };
 const ev = n => { try { window.gcEv && window.gcEv(n) } catch (e) {} };
+// Playtime: anonymous bands only (no handles). Visible time is counted per visit-segment and sent when the page is hidden.
+let vis = document.visibilityState === "visible" ? Date.now() : 0, acc = 0, gamesRun = 0, coinsVisit = 0;
+const cb = n => n < 1 ? "0" : n < 20 ? "1-19" : n < 50 ? "20-49" : n < 100 ? "50-99" : n < 200 ? "100-199" : "200plus";
+const tb = s => s < 30 ? "under-30s" : s < 60 ? "30-60s" : s < 180 ? "1-3m" : s < 600 ? "3-10m" : "10m-plus";
+const gb = s => s < 10 ? "0-10s" : s < 20 ? "10-20s" : s < 40 ? "20-40s" : s < 60 ? "40-60s" : "60s-plus";
+const flushTime = () => {
+  if (vis) { acc += (Date.now() - vis) / 1000; vis = 0; }
+  if (acc >= 3 && document.getElementById("dock")) { ev("room-time-" + tb(acc)); if (gamesRun) ev("games-per-visit-" + (gamesRun < 2 ? "1" : gamesRun < 4 ? "2-3" : "4plus")); ev("coins-per-visit-" + cb(coinsVisit)); }
+  acc = 0; gamesRun = 0; coinsVisit = 0;
+};
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushTime(); else vis = Date.now(); });
+window.addEventListener("pagehide", flushTime);
 const qs = new URLSearchParams(location.hash.slice(1) || location.search);
 const handle = (qs.get("h") || "").toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9._]/g, "");
 const bed = parseInt(qs.get("b"), 10);
@@ -263,24 +275,26 @@ $("cbar").onclick = e => {
 };
 
 // ---------- games ----------
-const G = $("game"); let stop = null;
+const G = $("game"); let stop = null, gId = null, gT0 = 0;
 function play(id) {
   const gm = GAMES.find(g => g.id === id); G.classList.add("on"); document.body.classList.add("gameopen");
   $("gname").textContent = gm.n.toUpperCase(); $("gmsg").innerHTML = `<span class="gd">${gm.d}</span>`; $("gflood").style.width = "0";
   const svg = $("gsvg"); svg.onpointerdown = svg.onpointermove = null; svg.innerHTML = "";
-  ev("game-start-" + id);
+  ev("game-start-" + id); gamesRun++; gId = id; gT0 = Date.now();
   stop = gm.start({ svg, hud: t => $("ghud").textContent = t, bar: p => $("gflood").style.width = Math.min(100, p) + "%",
     end: (coins, line) => {
-      coins = Math.max(0, Math.round(coins)); st.coins += coins; st.earned += coins; const best = coins > (st.best[id] || 0); if (best) st.best[id] = coins; save(); draw(); games();
+      coins = Math.max(0, Math.round(coins)); st.coins += coins; st.earned += coins; coinsVisit += coins; const best = coins > (st.best[id] || 0); if (best) st.best[id] = coins; save(); draw(); games();
+      ev("game-" + id + "-secs-" + gb((Date.now() - gT0) / 1000)); gId = null;
       ev("game-" + id + "-" + (coins < 10 ? "0-9" : coins < 20 ? "10-19" : coins < 40 ? "20-39" : coins < 70 ? "40-69" : "70plus"));
       $("gmsg").innerHTML = `<b>+${coins} COINS</b>${esc(line)}${best && coins ? " New best." : ""}<div class="row"><button class="btn" id="gx" type="button">Back to my room</button><button class="btn go" id="gy" type="button">Again</button></div>`;
       $("gx").onclick = closeGame; $("gy").onclick = () => play(id);
     } });
 }
-function closeGame() { if (stop) stop(); G.classList.remove("on"); document.body.classList.remove("gameopen"); }
+function closeGame() { if (gId) { ev("game-" + gId + "-quit-" + gb((Date.now() - gT0) / 1000)); gId = null; } if (stop) stop(); G.classList.remove("on"); document.body.classList.remove("gameopen"); }
 $("pgrid").onclick = e => { const b = e.target.closest("[data-g]"); if (b) play(b.dataset.g); };
 $("gquit").onclick = closeGame;
 $("mute").onclick = () => { window.BK_MUTE = !window.BK_MUTE; $("mute").textContent = window.BK_MUTE ? "Sound off" : "Sound on"; try { localStorage.setItem("bunkerMute", window.BK_MUTE ? "1" : "") } catch (e) {} };
 try { window.BK_MUTE = !!localStorage.getItem("bunkerMute"); } catch (e) {}
 $("mute").textContent = window.BK_MUTE ? "Sound off" : "Sound on";
+ev("earned-total-" + cb(st.earned || 0));
 })();
