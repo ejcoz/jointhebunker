@@ -50,7 +50,8 @@ h2{font:400 20px Anton,sans-serif;letter-spacing:.05em;margin:22px 0 8px}
 @keyframes pop{to{opacity:0;transform:translateY(-18px)}}
 .gmsg{text-align:center;margin-top:12px}
 .gmsg b{font:400 26px Anton,sans-serif;color:var(--gold);display:block}
-</style><script>window.goatcounter={no_onload:true};window.gcEv=n=>{try{window.goatcounter.count&&window.goatcounter.count({path:n,title:n,event:true})}catch(e){}};</script>
+</style><script>try{if(location.search)history.replaceState(null,"",location.pathname+"#"+location.search.slice(1))}catch(e){}</script>
+<script>window.goatcounter={no_onload:true};window.gcEv=n=>{try{window.goatcounter.count&&window.goatcounter.count({path:n,title:n,event:true})}catch(e){}};</script>
 <script data-goatcounter="https://jointhebunker.goatcounter.com/count" async src="//gc.zgo.at/count.js" onload="try{goatcounter.count({path:location.pathname})}catch(e){}"></script>
 </head>
 <body><main id="app"></main>
@@ -78,7 +79,7 @@ const SHOP = [
 const $ = id => document.getElementById(id), fmt = n => n.toLocaleString("en-US");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) } return h >>> 0 };
-const qs = new URLSearchParams(location.search);
+const qs = new URLSearchParams(location.hash.slice(1) || location.search);
 const handle = (qs.get("h") || "").toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9._]/g, "");
 const bed = parseInt(qs.get("b"), 10);
 const L = LEVELS.find(l => bed >= l[2] && bed <= l[3]);

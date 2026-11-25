@@ -713,7 +713,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px}
   views.addEventListener("click", e => {
     const b = e.target.closest("button[data-v]"); if (!b || !cur) return;
     if (b.dataset.v === "replay") { play(cur); return; }
-    if (b.dataset.v === "room") { if (cur.handle && cur.bed) window.gcEv && gcEv("room-button"), location.href = `/room/?h=${encodeURIComponent(cur.handle)}&b=${cur.bed}`; return; }
+    if (b.dataset.v === "room") { if (cur.handle && cur.bed) window.gcEv && gcEv("room-button"), location.href = `/room/#h=${encodeURIComponent(cur.handle)}&b=${cur.bed}`; return; }
     if (b.dataset.v === "up" || b.dataset.v === "down") { const i = ORDER.indexOf(cur.lvl) + (b.dataset.v === "up" ? -1 : 1); if (i >= 0 && i < ORDER.length) { light(ORDER[i]); tour(ORDER[i], true); } return; }
     run++; timers.forEach(clearTimeout); timers = []; blk.classList.remove("on");
     const v = b.dataset.v;
