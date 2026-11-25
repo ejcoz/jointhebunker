@@ -41,6 +41,9 @@ h2{font:400 20px Anton,sans-serif;letter-spacing:.05em;margin:22px 0 8px}
 .coat svg{width:100%;aspect-ratio:3/2;background:#3a372c;border-radius:6px}.coat.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
 .test{margin-top:20px;border:2px dashed #ff3b3b;border-radius:12px;padding:12px;font-size:13px}.test b{color:#ff3b3b;font:400 16px Anton,sans-serif;letter-spacing:.08em}.test small{color:var(--muted)}
 .test .btn{font-size:13px;padding:9px 6px}.tpets{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.petask{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;background:#1b1a15;border:2px dashed var(--gold);border-radius:12px;padding:12px;margin-top:12px}
+.pa-ic{font-size:28px}.pa-t{flex:1;min-width:200px}.pa-t b{display:block;font:400 17px Anton,sans-serif;letter-spacing:.05em;color:var(--gold)}.pa-t span{font-size:13px;color:#d8cfb6;line-height:1.35}
+.pa-go{flex:1 1 100%;text-align:center;font:600 15px Fredoka,sans-serif;background:var(--gold);color:#15100a;border-radius:10px;padding:10px;text-decoration:none}
 .fine{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.5}
 .lock{text-align:center;padding:40px 10px}
 /* room animations */
@@ -52,7 +55,7 @@ h2{font:400 20px Anton,sans-serif;letter-spacing:.05em;margin:22px 0 8px}
 .flame{transform-box:fill-box;transform-origin:50% 100%;animation:flm .5s ease-in-out infinite alternate}@keyframes flm{to{transform:scaleY(1.2) skewX(4deg)}}
 .swim{animation:swm 3s ease-in-out infinite alternate}@keyframes swm{to{transform:translateX(-5px)}}
 /* catalogue sheet */
-#cat{position:fixed;left:0;right:0;bottom:0;height:52vh;background:#15120ef5;border-top:3px solid var(--gold);border-radius:18px 18px 0 0;transform:translateY(105%);transition:transform .25s;z-index:8;display:flex;flex-direction:column;max-width:560px;margin:0 auto;box-shadow:0 -10px 40px #000a}
+#cat{position:fixed;left:0;right:0;bottom:0;height:52vh;background:#15120e;border-top:3px solid var(--gold);border-radius:18px 18px 0 0;transform:translateY(105%);transition:transform .25s;z-index:8;display:flex;flex-direction:column;max-width:560px;margin:0 auto;box-shadow:0 -10px 40px #000a}
 #cat:not(.on){visibility:hidden;transition:transform .25s,visibility 0s .25s}
 #cat.on{transform:none}
 .chead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 4px}

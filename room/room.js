@@ -159,6 +159,7 @@ function draw() {
 const petLine = pet ? (() => { const [k, lab, name, n] = pet;
   return { cat: `${name || "Your cat"} found the warm spot on your bunk before you did.`, dog: `${name || "Your dog"} won't leave your side.${n > 1 ? " Neither will the other one." : ""}`, fish: `${name || "Your fish"} has the best view in the room.`, bird: `${name || "Your bird"} watches the door. Nothing gets past.`,
     rabbit: `${name || "Your rabbit"} already dug a corner of the rug.`, rodent: `${name || "Your " + lab.toLowerCase()} runs laps all night. You'll get used to it.`, snake: `${name || "Your snake"} likes the warm pipes.`, lizard: `${name || "Your " + lab.toLowerCase()} likes the warm pipes.`, turtle: `${name || "Your " + lab.toLowerCase()} is in no hurry. Nobody down here is.`, critter: `${name || "Your " + lab.toLowerCase()} made it down. Nobody asked how.` }[k]; })() : "";
+const PETASK = `<div class="petask"><div class="pa-ic">🐾</div><div class="pa-t"><b>NO BUNKMATE YET?</b><span>Comment on the latest Transmission with the animal and its name. It moves in at the next manifest update.</span></div><a class="pa-go" href="https://www.instagram.com/jointhebunker/" target="_blank" rel="noopener" data-ask="1">Comment on Instagram</a></div>`;
 const COATS = { cat: ["Ginger", "Black", "Grey", "White", "Brown"], dog: ["Tan", "Black", "Golden", "White", "Brown & white"], rabbit: ["White", "Fawn", "Grey", "Brown"], rodent: ["Golden", "Ginger", "White", "Grey"], bird: ["Green", "Blue", "Red", "Yellow"] };
 const mate = pet ? `<div class="mate"><div style="flex:1"><small>BUNKMATE</small><b>${esc((pet[2] ? pet[2] + " · " : "") + (pet[3] > 1 ? pet[3] + " " + (/fish|sheep/i.test(pet[1]) ? pet[1] : pet[1] + "s") : pet[1])).toUpperCase()}</b></div>${COATS[pet[0]] ? `<button class="mini" id="styleBtn" type="button">Style ${esc(pet[2] ? pet[2].split(" & ")[0] : "them")}</button>` : ""}</div>` : "";
 app.innerHTML = `
@@ -166,13 +167,13 @@ app.innerHTML = `
 <div class="k">${lvl} · ${esc(L[1].toUpperCase())} · BED ${fmt(bed)}</div>
 <h1>YOUR ROOM, <b>@${esc(handle.toUpperCase())}</b></h1>
 <div class="roomwrap"><svg id="room" viewBox="0 0 300 400" role="img" aria-label="Your bunker room"></svg></div>
-${mate}
+${pet ? mate : PETASK}
 <div id="coats"></div>
 <p>${petLine} ${JOB[lvl]}</p>
 <div class="row"><button class="btn go" id="openCat" type="button">Open the catalogue · ${ITEMS.length} items</button></div>
 <h2>EARN COINS</h2>
 <div class="games" id="games"></div>
-<p class="fine">Coins are earned, never bought. Your room is saved on this phone for now.${pet ? "" : " Asked for a pet in the comments? Your bunkmate moves in at the next manifest update."}</p>`;
+<p class="fine">Coins are earned, never bought. Your room is saved on this phone for now.</p>`;
 function games() {
   $("games").innerHTML = GAMES.map(g => `<button class="gm" data-g="${g.id}" type="button" style="--c:${g.col}"><b>${g.n}</b><span>${g.d}</span><em>${st.best[g.id] ? "Best: " + st.best[g.id] + " coins" : "Not played yet"}</em></button>`).join("");
 }
@@ -186,6 +187,7 @@ function coatPicker() {
 }
 let coatOpen = false;
 document.addEventListener("click", e => {
+  if (e.target.closest("[data-ask]")) ev("pet-ask-click");
   if (e.target.closest("#styleBtn")) { coatOpen = !coatOpen; coatOpen ? coatPicker() : ($("coats").innerHTML = ""); return; }
   const c = e.target.closest("[data-coat]"); if (c) { st.coat = +c.dataset.coat; save(); draw(); coatPicker(); ev("pet-style"); }
 });
@@ -213,7 +215,8 @@ function thumb(i) {
 }
 function renderCat() {
   const list = ITEMS.filter(i => (cat === "all" || i.cat === cat) && (!i.pet || pet));
-  $("tabs").innerHTML = CATS.filter(([id]) => id !== "pet" || pet).map(([id, n]) => `<button data-c="${id}" class="${id === cat ? "on" : ""}" type="button">${n}</button>`).join("");
+  $("tabs").innerHTML = CATS.map(([id, n]) => `<button data-c="${id}" class="${id === cat ? "on" : ""}" type="button">${n}</button>`).join("");
+  if (!pet && cat === "pet") { $("grid").innerHTML = `<div style="grid-column:1/-1">${PETASK}</div>`; sel = null; bar(); return; }
   $("grid").innerHTML = list.map(i => { const own = st.own.includes(i.id), on = st.eq[i.slot] === i.id;
     return `<button class="ci${sel === i.id ? " sel" : ""}${i.rare ? " rare" : ""}" data-i="${i.id}" type="button">${thumb(i)}<span class="cn">${i.n}</span><span class="cp">${on ? "In your room" : own ? "Owned" : `<i></i>${i.c}`}</span></button>`; }).join("");
   bar();
