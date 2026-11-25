@@ -297,4 +297,13 @@ $("mute").onclick = () => { window.BK_MUTE = !window.BK_MUTE; $("mute").textCont
 try { window.BK_MUTE = !!localStorage.getItem("bunkerMute"); } catch (e) {}
 $("mute").textContent = window.BK_MUTE ? "Sound off" : "Sound on";
 ev("earned-total-" + cb(st.earned || 0));
+// Returning visitors: one anonymous event per page load, based on this device's last visit day (no handle).
+try {
+  const day = new Date().toLocaleDateString("en-CA"), prev = localStorage.getItem("bunkerSeenDay");
+  if (!TEST) {
+    if (!prev) ev("visit-new");
+    else { const d = Math.round((new Date(day) - new Date(prev)) / 864e5); ev(d <= 0 ? "visit-back-same-day" : d === 1 ? "visit-back-1d" : d < 7 ? "visit-back-2-6d" : "visit-back-7d-plus"); }
+    localStorage.setItem("bunkerSeenDay", day);
+  }
+} catch (e) {}
 })();
