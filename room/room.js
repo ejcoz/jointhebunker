@@ -15,21 +15,24 @@ window.addEventListener("hashchange", () => location.reload());
 const app = $("app");
 if (!handle || !L) { app.innerHTML = `<div class="lock"><h1>THIS DOOR IS <b>LOCKED</b></h1><p>Find your bed first, then open your room from your door.</p><a class="btn go" href="/" style="display:inline-block;text-decoration:none">Find my bed</a></div>`; return; }
 const KEY = "bunkerRoom:" + handle;
-let st = { coins: 0, own: [], eq: {}, best: {}, earned: 0 };
+let st = { coins: 0, own: [], eq: {}, best: {}, earned: 0, coat: null };
 try {
   const s = JSON.parse(localStorage.getItem(KEY));
   if (s && typeof s.coins === "number") {
-    st.coins = s.coins; st.best = s.best || {}; st.earned = s.earned || s.coins;
+    st.coins = s.coins; st.best = s.best || {}; st.earned = s.earned || s.coins; st.coat = s.coat ?? null; if (s.testPet !== undefined) st.testPet = s.testPet;
     const MIG = { blanket: "blanket-red", poster: "poster-sunset", lights: "lights-rainbow", rug: "rug-braided", plant: "corner-plant", radio: "top-radio", petbed: "pet-cushion-blue", flag: "wall-banner-gold" };
     st.own = (s.own || []).map(x => MIG[x] || x).filter(x => BY[x]);
     st.eq = s.eq || {}; if (s.on) for (const x of s.on) { const id = MIG[x] || x; if (BY[id]) st.eq[BY[id].slot] = id; }
   }
 } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
-const pet = PETS[handle] || null;
+const TEST = qs.get("test") === "1";
+let pet = PETS[handle] || null;
+if (TEST && st.testPet !== undefined) pet = st.testPet;
 const lvl = L[0], H = hash(handle);
 // ---------- sprites ----------
-const pick = (a, k) => a[(H >>> k) % a.length];
+const BASEK = { 3: 0, 4: 1, 5: 0, 6: 1, 7: 0, 9: 0, 11: 0 };
+const pick = (a, k) => a[((st.coat != null ? st.coat + (BASEK[k] || 0) : (H >>> k)) % a.length + a.length) % a.length];
 const sp = {
   cat(x, y, s = 1, alt = 0) {
     const C = pick([["#e08a3a","#9a4e16","#5a2e0e"],["#2b2b2b","#111","#000"],["#9a9a9a","#6d6d6d","#333"],["#f1ece0","#c9c1ad","#6b6455"],["#c98b4f","#3b2a1d","#3b2a1d"]], 3 + alt);
@@ -156,13 +159,15 @@ function draw() {
 const petLine = pet ? (() => { const [k, lab, name, n] = pet;
   return { cat: `${name || "Your cat"} found the warm spot on your bunk before you did.`, dog: `${name || "Your dog"} won't leave your side.${n > 1 ? " Neither will the other one." : ""}`, fish: `${name || "Your fish"} has the best view in the room.`, bird: `${name || "Your bird"} watches the door. Nothing gets past.`,
     rabbit: `${name || "Your rabbit"} already dug a corner of the rug.`, rodent: `${name || "Your " + lab.toLowerCase()} runs laps all night. You'll get used to it.`, snake: `${name || "Your snake"} likes the warm pipes.`, lizard: `${name || "Your " + lab.toLowerCase()} likes the warm pipes.`, turtle: `${name || "Your " + lab.toLowerCase()} is in no hurry. Nobody down here is.`, critter: `${name || "Your " + lab.toLowerCase()} made it down. Nobody asked how.` }[k]; })() : "";
-const mate = pet ? `<div class="mate"><div><small>BUNKMATE</small><b>${esc((pet[2] ? pet[2] + " · " : "") + (pet[3] > 1 ? pet[3] + " " + (/fish|sheep/i.test(pet[1]) ? pet[1] : pet[1] + "s") : pet[1])).toUpperCase()}</b></div></div>` : "";
+const COATS = { cat: ["Ginger", "Black", "Grey", "White", "Brown"], dog: ["Tan", "Black", "Golden", "White", "Brown & white"], rabbit: ["White", "Fawn", "Grey", "Brown"], rodent: ["Golden", "Ginger", "White", "Grey"], bird: ["Green", "Blue", "Red", "Yellow"] };
+const mate = pet ? `<div class="mate"><div style="flex:1"><small>BUNKMATE</small><b>${esc((pet[2] ? pet[2] + " · " : "") + (pet[3] > 1 ? pet[3] + " " + (/fish|sheep/i.test(pet[1]) ? pet[1] : pet[1] + "s") : pet[1])).toUpperCase()}</b></div>${COATS[pet[0]] ? `<button class="mini" id="styleBtn" type="button">Style ${esc(pet[2] ? pet[2].split(" & ")[0] : "them")}</button>` : ""}</div>` : "";
 app.innerHTML = `
 <div class="top"><a class="back" href="/">← Back to your door</a><div class="coins" aria-label="Coins"><i></i><span id="coinN">0</span></div></div>
 <div class="k">${lvl} · ${esc(L[1].toUpperCase())} · BED ${fmt(bed)}</div>
 <h1>YOUR ROOM, <b>@${esc(handle.toUpperCase())}</b></h1>
 <div class="roomwrap"><svg id="room" viewBox="0 0 300 400" role="img" aria-label="Your bunker room"></svg></div>
 ${mate}
+<div id="coats"></div>
 <p>${petLine} ${JOB[lvl]}</p>
 <div class="row"><button class="btn go" id="openCat" type="button">Open the catalogue · ${ITEMS.length} items</button></div>
 <h2>EARN COINS</h2>
@@ -173,6 +178,28 @@ function games() {
 }
 draw(); games();
 ev(pet ? "room-open-pet" : "room-open");
+function coatPicker() {
+  const box = $("coats"); if (!pet || !COATS[pet[0]]) { box.innerHTML = ""; return; }
+  const k = pet[0], names = COATS[k], keep = st.coat, POS = { cat: [0, 0], dog: [0, 0], rabbit: [-4, 10], rodent: [0, 4], bird: [0, 10] };
+  box.innerHTML = `<div class="coats">${names.map((n, i) => { st.coat = i; const [dx, dy] = POS[k]; const sv = `<svg viewBox="-48 -40 96 64"><g transform="translate(${dx} ${dy})">${sp[k](k === "dog" ? -6 : 0, 0, k === "rodent" ? 1.6 : 1)}</g></svg>`; return `<button class="coat${keep === i ? " on" : ""}" data-coat="${i}" type="button">${sv}<span>${n}</span></button>`; }).join("")}</div>`;
+  st.coat = keep;
+}
+let coatOpen = false;
+document.addEventListener("click", e => {
+  if (e.target.closest("#styleBtn")) { coatOpen = !coatOpen; coatOpen ? coatPicker() : ($("coats").innerHTML = ""); return; }
+  const c = e.target.closest("[data-coat]"); if (c) { st.coat = +c.dataset.coat; save(); draw(); coatPicker(); ev("pet-style"); }
+});
+if (TEST) {
+  const kinds = ["cat", "dog", "fish", "bird", "rabbit", "rodent", "snake", "lizard", "turtle", "critter"];
+  app.insertAdjacentHTML("beforeend", `<div class="test"><b>TEST MODE</b> <small>Only changes this phone.</small>
+  <div class="row"><button class="btn" data-t="coins" type="button">+500 coins</button><button class="btn" data-t="all" type="button">Unlock all</button><button class="btn" data-t="reset" type="button">Reset room</button></div>
+  <div class="tpets">Preview pet: ${kinds.map(k => `<button class="mini" data-tp="${k}" type="button">${k}</button>`).join("")}<button class="mini" data-tp="none" type="button">none</button><button class="mini" data-tp="real" type="button">real</button></div></div>`);
+  app.addEventListener("click", e => {
+    const t = e.target.closest("[data-t]"), tp = e.target.closest("[data-tp]");
+    if (t) { if (t.dataset.t === "coins") st.coins += 500; if (t.dataset.t === "all") st.own = ITEMS.map(i => i.id); if (t.dataset.t === "reset") st = { coins: 0, own: [], eq: {}, best: {}, earned: 0, coat: null }; save(); location.reload(); }
+    if (tp) { const v = tp.dataset.tp; if (v === "real") delete st.testPet; else st.testPet = v === "none" ? null : [v, v[0].toUpperCase() + v.slice(1), "Test", 1]; st.coat = null; save(); location.reload(); }
+  });
+}
 
 // ---------- catalogue ----------
 const sheet = $("cat");
