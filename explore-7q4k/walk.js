@@ -330,7 +330,7 @@ let edReady = null;
 function loadEditor() {
   if (edReady) return edReady;
   edReady = (async () => {
-    const ok = await loadScript("/room/items.js");
+    const ok = window.BK_ITEMS ? true : await loadScript("/room/items.js?v=2");
     if (ok && window.BK_ITEMS) { ED.BY = window.BK_ITEMS.BY; ED.SL = window.BK_ITEMS.SLOTS; ED.ITEMS = window.BK_ITEMS.ITEMS.filter(i => !i.pet); }
     let s = null; try { s = JSON.parse(localStorage.getItem("bunkerRoom:" + handle)); } catch (e) {}
     const st = Object.assign({ coins: 0, earned: 0, own: [], eq: {}, best: {} }, s || {});
@@ -338,7 +338,7 @@ function loadEditor() {
     if (s && s.on) { for (const x of s.on) { const id = MIG[x] || x; if (ED.BY[id]) st.eq[ED.BY[id].slot] = id; } delete st.on; }
     ED.st = st;
     try { ED.petSnap = JSON.parse(localStorage.getItem("bunkerPetSvg:" + handle) || "null"); } catch (e) {}
-  })();
+  })().catch(e => { edReady = null; throw e; });
   return edReady;
 }
 function saveRoom() { try { const cur = JSON.parse(localStorage.getItem("bunkerRoom:" + handle) || "{}"); localStorage.setItem("bunkerRoom:" + handle, JSON.stringify(Object.assign(cur, { coins: ED.st.coins, own: ED.st.own, eq: ED.st.eq, earned: ED.st.earned, best: ED.st.best }))); } catch (e) {} }
@@ -410,12 +410,13 @@ function focus(slot) {
 }
 function openEd(slot) {
   if (MINE < 0) return;
-  loadEditor().then(() => {
-    ED.open = true; ED.slot = slot || ED.slot || "all"; ED.sel = null; ED.preview = null;
-    document.body.classList.add("editing"); $("editor").classList.add("on");
-    focus(ED.slot);
-    renderEd(); ev("walk-editor");
-  });
+  // open the panel straight away, fill it once the catalogue is ready
+  ED.open = true; ED.slot = slot || ED.slot || "all"; ED.sel = null; ED.preview = null;
+  document.body.classList.add("editing"); $("editor").classList.add("on"); focus(ED.slot);
+  if (!ED.st) $("edGrid").innerHTML = `<p class="edmsg">Loading the catalogue…</p>`;
+  loadEditor().then(() => { if (!ED.st) throw new Error("no save loaded"); if (!ED.ITEMS.length) throw new Error("catalogue empty"); return renderEd(); })
+    .then(() => ev("walk-editor"))
+    .catch(err => { $("edGrid").innerHTML = `<p class="edmsg">Couldn't load the catalogue: ${String(err && err.message || err)}</p>`; });
 }
 function closeEd() { ED.open = false; ED.cam = null; ED.sel = null; if (ED.preview) { ED.preview = null; decorate(ED.RM); } document.body.classList.remove("editing"); $("editor").classList.remove("on"); }
 $("edTabs").onclick = e => { const b = e.target.closest("[data-s]"); if (!b) return; ED.slot = b.dataset.s; focus(ED.slot); renderEd(); };
@@ -594,7 +595,7 @@ function start() {
   setTimeout(() => $("hint").classList.add("on"), 600); setTimeout(() => $("hint").classList.remove("on"), 7000);
 }
 $("start").onclick = start;
-$("roomGo").onclick = e => { e.preventDefault(); openEd("all"); };
+$("roomGo").addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openEd("all"); });
 $("start").disabled = false; $("start").textContent = "▶ ENTER";
 // ---------- quick travel ----------
 let travelling = false;

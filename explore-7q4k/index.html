@@ -67,6 +67,8 @@ body.editing #travelBtn{opacity:0;pointer-events:none}
 <button type="button" id="travelBtn" class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Travel</button>
 <div id="travelMenu" class="sheet"><div class="edh"><h2>FAST TRAVEL</h2><button type="button" id="travelClose">Close</button></div><div id="travelList"></div></div>
 <div id="fade"></div>
+<div id="errbox"></div>
+<script>addEventListener("error",e=>{const b=document.getElementById("errbox");b.style.display="block";b.textContent="Error: "+(e.message||e.type)+(e.filename?" ("+e.filename.split("/").pop()+":"+e.lineno+")":"");});addEventListener("unhandledrejection",e=>{const b=document.getElementById("errbox");b.style.display="block";b.textContent="Error: "+(e.reason&&e.reason.message||e.reason);});</script>
 <section id="editor" aria-label="Decorate your room">
   <div class="edh"><h2>DECORATE</h2><span class="coinchip"><i></i><span id="edCoins">0</span></span><a id="edPlay" href="/room/">Earn coins</a><button type="button" id="edDone">Done</button></div>
   <div id="edTabs"></div>
@@ -74,14 +76,15 @@ body.editing #travelBtn{opacity:0;pointer-events:none}
   <div id="edAct"></div>
 </section>
 <div class="sheet" id="liftPanel"><div class="k">LIFT · PICK A FLOOR</div><div id="liftBtns"></div></div>
-<div class="sheet" id="roomBar"><div class="k">YOUR ROOM · TAP ANYTHING TO CHANGE IT</div><a class="go" id="roomGo" href="#">DECORATE MY ROOM <span>→</span></a></div>
+<div class="sheet" id="roomBar"><div class="k">YOUR ROOM · TAP ANYTHING TO CHANGE IT</div><button class="go" id="roomGo" type="button" style="width:100%">DECORATE MY ROOM <span>→</span></button></div>
 <div class="cover" id="cover">
   <div style="font:600 12px Inter,sans-serif;letter-spacing:.16em;color:#b3aa90">JOIN THE BUNKER</div>
   <h1 id="ctitle">ENTER<br><b>THE BUNKER</b></h1>
   <p id="csub">Walk in, ride the lift, find your door.</p>
   <ul><li>Stick at the bottom left to walk</li><li>Right thumb to look around</li><li>On a computer: W A S D and drag</li></ul>
   <button class="go" id="start" type="button" disabled>LOADING…</button>
+  <div style="font:600 10px Inter,sans-serif;color:#6b6450">test build 9</div>
 </div>
-<script type="module" src="walk.js?v=8"></script>
+<script type="module" src="walk.js?v=9"></script>
 </body>
 </html>
