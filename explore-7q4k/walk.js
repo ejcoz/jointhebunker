@@ -429,6 +429,9 @@ $("edAct").onclick = e => {
   ED.preview = null; saveRoom(); decorate(ED.RM); renderEd();
 };
 $("edDone").onclick = closeEd;
+// test mode (&test=1): free coins for trying the editor; only changes this phone's save
+const TESTMODE = /(^|[#&?])test=1(&|$)/.test(location.hash + "&" + location.search);
+if (TESTMODE) { const b = document.createElement("button"); b.type = "button"; b.id = "edTest"; b.textContent = "+500 test"; b.onclick = () => { ED.st.coins += 500; saveRoom(); renderEd(); tone(880, .15, "triangle", .1); }; $("edPlay").after(b); }
 $("edPlay").onclick = () => { try { sessionStorage.setItem("bunkerOpenPlay", "1"); } catch (x) {} };
 
 // ---------- lights ----------
