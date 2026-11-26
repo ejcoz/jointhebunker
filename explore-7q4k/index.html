@@ -45,6 +45,33 @@ body.inroom #travel{bottom:calc(122px + env(safe-area-inset-bottom))}
 #travel button{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 10px;border-radius:999px;border:2px solid #4a3a22;background:rgba(11,7,5,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);font:700 13px Inter,sans-serif;cursor:pointer}
 #travel button svg{width:20px;height:20px;fill:none;stroke:var(--gold);stroke-width:2}
 #travel button[hidden]{display:none}
+#editor{position:fixed;left:0;right:0;bottom:0;z-index:6;max-height:56dvh;display:flex;flex-direction:column;background:#120c08f2;border-top:3px solid var(--gold);border-radius:18px 18px 0 0;padding:12px 0 calc(10px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+#editor.on{transform:none}
+.edh{display:flex;align-items:center;gap:8px;padding:0 14px}
+.edh h2{margin:0;font:400 22px Anton,sans-serif;letter-spacing:.04em;flex:1}
+.coinchip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;background:#2a2016;color:var(--gold);font:700 15px Inter,sans-serif}
+.cn,.coinchip i{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:inset 0 0 0 2.5px #c48a12;vertical-align:-1px;margin-right:3px}
+.edh a,.edh button{min-height:34px;padding:0 12px;border-radius:999px;border:2px solid #4a3a22;background:none;color:var(--ink);font:700 13px Inter,sans-serif;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+#edDone{background:var(--gold);border-color:var(--gold);color:#15100a}
+#edTabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px 8px;scrollbar-width:none}
+#edTabs::-webkit-scrollbar{display:none}
+#edTabs button{flex:0 0 auto;min-height:34px;padding:0 12px;border-radius:999px;border:1.5px solid #3a2d1c;background:#1d140d;color:var(--muted);font:600 13px Inter,sans-serif;cursor:pointer}
+#edTabs button.on{background:var(--gold);border-color:var(--gold);color:#15100a}
+#edGrid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:2px 14px 8px;min-height:120px}
+#edGrid button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px 8px;border-radius:12px;border:2px solid #2e2418;background:#1d140d;color:var(--ink);cursor:pointer;text-align:center}
+#edGrid button.sel{border-color:var(--gold)}
+#edGrid button.on{background:#2a2a14}
+#edGrid button.rare b{color:var(--gold)}
+#edGrid .th{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
+#edGrid .th img{max-width:92%;max-height:92%}
+#edGrid b{font:600 12px Inter,sans-serif;line-height:1.2}
+#edGrid small{font:600 11px Inter,sans-serif;color:var(--muted)}
+#edAct{display:flex;align-items:center;gap:10px;padding:8px 14px 0;border-top:1px solid #2e2418;min-height:58px}
+#edAct .tip{font:500 13px Inter,sans-serif;color:var(--muted)}
+#edAct .nm{flex:1;min-width:0}#edAct .nm b{display:block;font:700 14px Inter,sans-serif}#edAct .nm small{display:block;font:500 12px Inter,sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.go.sm{min-height:46px;font-size:17px;padding:0 16px}
+.ghost{min-height:46px;padding:0 14px;border-radius:12px;border:2px solid #4a3a22;background:none;color:var(--ink);font:700 13px Inter,sans-serif;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+body.editing #joy,body.editing #travel,body.editing #guide{opacity:0!important;pointer-events:none!important}
 #fade{position:fixed;inset:0;z-index:7;background:#000;opacity:0;pointer-events:none;transition:opacity .25s}
 #fade.on{opacity:1}
 .cover{position:fixed;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(80% 60% at 50% 40%,#2a1f12,#000);text-align:center;padding:24px;transition:opacity .5s}
@@ -67,8 +94,14 @@ body.inroom #travel{bottom:calc(122px + env(safe-area-inset-bottom))}
   <button type="button" id="tDoor"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>Entrance</button>
 </div>
 <div id="fade"></div>
+<section id="editor" aria-label="Decorate your room">
+  <div class="edh"><h2>DECORATE</h2><span class="coinchip"><i></i><span id="edCoins">0</span></span><a id="edPlay" href="/room/">Earn coins</a><button type="button" id="edDone">Done</button></div>
+  <div id="edTabs"></div>
+  <div id="edGrid"></div>
+  <div id="edAct"></div>
+</section>
 <div class="sheet" id="liftPanel"><div class="k">LIFT · PICK A FLOOR</div><div id="liftBtns"></div></div>
-<div class="sheet" id="roomBar"><div class="k">YOUR ROOM</div><a class="go" id="roomGo" href="/room/">DECORATE MY ROOM <span>→</span></a></div>
+<div class="sheet" id="roomBar"><div class="k">YOUR ROOM · TAP ANYTHING TO CHANGE IT</div><a class="go" id="roomGo" href="#">DECORATE MY ROOM <span>→</span></a></div>
 <div class="cover" id="cover">
   <div style="font:600 12px Inter,sans-serif;letter-spacing:.16em;color:#b3aa90">JOIN THE BUNKER</div>
   <h1 id="ctitle">ENTER<br><b>THE BUNKER</b></h1>

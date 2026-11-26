@@ -240,7 +240,8 @@ function buildFloor(i) {
 }
 
 
-// ---------- your saved room, in 3D ----------
+// ---------- your saved room, in 3D, and the 3D room editor ----------
+// Same save as the 2D room page (localStorage "bunkerRoom:<handle>"): coins, own, eq. Coins are only ever earned in the games.
 function loadScript(src) { return new Promise(r => { const sc = document.createElement("script"); sc.src = src; sc.onload = () => r(true); sc.onerror = () => r(false); document.head.appendChild(sc); }); }
 function svgCanvas(inner, vb, scale = 4) {
   return new Promise(res => {
@@ -249,51 +250,121 @@ function svgCanvas(inner, vb, scale = 4) {
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   });
 }
-function cropAlpha(c) { // trim transparent edges
+function cropAlpha(c) {
   const g = c.getContext("2d"), d = g.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
   for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   if (x1 < 0) return null; const o = document.createElement("canvas"); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1; o.getContext("2d").drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height); return o;
 }
 const texOf = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
-function card(c, hgt) { // a cut-out standing in the room
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(hgt * c.width / c.height, hgt), new THREE.MeshStandardMaterial({ map: texOf(c), transparent: true, alphaTest: .05, side: THREE.DoubleSide, roughness: .8 }));
-  return m;
-}
+const card = (c, hgt) => new THREE.Mesh(new THREE.PlaneGeometry(hgt * c.width / c.height, hgt), new THREE.MeshStandardMaterial({ map: texOf(c), transparent: true, alphaTest: .05, side: THREE.DoubleSide, roughness: .8 }));
 const colorsIn = svg => [...svg.matchAll(/fill="(#[0-9a-fA-F]{6})"/g)].map(m => m[1]).filter(c => !/^#1[0-2]1[0-2]1[0-2]$/i.test(c));
-let roomData = null;
+const ED = { st: null, BY: {}, SL: {}, ITEMS: [], petSnap: null, preview: null, sel: null, slot: "all", open: false, RM: null, thumbs: {} };
+const MIG = { blanket: "blanket-red", poster: "poster-sunset", lights: "lights-rainbow", rug: "rug-braided", plant: "corner-plant", radio: "top-radio", petbed: "pet-cushion-blue", flag: "wall-banner-gold" };
+const EDIT_SLOTS = [["all", "All"], ["blanket", "Blanket"], ["pillow", "Pillow"], ["wallA", "Poster"], ["wallB", "Wall"], ["top", "Locker top"], ["locker", "Footlocker"], ["rug", "Rug"], ["corner", "Corner"], ["lights", "Lights"]];
+let edReady = null;
+function loadEditor() {
+  if (edReady) return edReady;
+  edReady = (async () => {
+    const ok = await loadScript("/room/items.js");
+    if (ok && window.BK_ITEMS) { ED.BY = window.BK_ITEMS.BY; ED.SL = window.BK_ITEMS.SLOTS; ED.ITEMS = window.BK_ITEMS.ITEMS.filter(i => !i.pet); }
+    let s = null; try { s = JSON.parse(localStorage.getItem("bunkerRoom:" + handle)); } catch (e) {}
+    const st = Object.assign({ coins: 0, earned: 0, own: [], eq: {}, best: {} }, s || {});
+    st.own = (st.own || []).map(x => MIG[x] || x).filter(x => ED.BY[x]); st.eq = st.eq || {};
+    if (s && s.on) { for (const x of s.on) { const id = MIG[x] || x; if (ED.BY[id]) st.eq[ED.BY[id].slot] = id; } delete st.on; }
+    ED.st = st;
+    try { ED.petSnap = JSON.parse(localStorage.getItem("bunkerPetSvg:" + handle) || "null"); } catch (e) {}
+  })();
+  return edReady;
+}
+function saveRoom() { try { const cur = JSON.parse(localStorage.getItem("bunkerRoom:" + handle) || "{}"); localStorage.setItem("bunkerRoom:" + handle, JSON.stringify(Object.assign(cur, { coins: ED.st.coins, own: ED.st.own, eq: ED.st.eq, earned: ED.st.earned, best: ED.st.best }))); } catch (e) {} }
+const worn = slot => { if (ED.preview && ED.BY[ED.preview].slot === slot) return ED.BY[ED.preview]; const id = ED.st && ED.st.eq[slot]; return id && ED.BY[id] ? ED.BY[id] : null; };
+
+let decoRun = 0;
 async function decorate(RM) {
-  if (!roomData) {
-    let st = null; try { st = JSON.parse(localStorage.getItem("bunkerRoom:" + handle)); } catch (e) {}
-    let petSnap = null; try { petSnap = JSON.parse(localStorage.getItem("bunkerPetSvg:" + handle) || "null"); } catch (e) {}
-    const okItems = await loadScript("/room/items.js");
-    roomData = { st, petSnap, BY: okItems && window.BK_ITEMS ? window.BK_ITEMS.BY : {} , SL: okItems && window.BK_ITEMS ? window.BK_ITEMS.SLOTS : {} };
-  }
-  const { st, petSnap, BY, SL } = roomData, MIG = { blanket: "blanket-red", poster: "poster-sunset", lights: "lights-rainbow", rug: "rug-braided", plant: "corner-plant", radio: "top-radio", petbed: "pet-cushion-blue", flag: "wall-banner-gold" };
-  const eq = {}; if (st) { Object.assign(eq, st.eq || {}); if (st.on) for (const x of st.on) { const id = MIG[x] || x; if (BY[id]) eq[BY[id].slot] = id; } }
-  const item = s => BY[eq[s]] || null, o = { lvl: MINE >= 0 ? LEVELS[MINE][0] : "B1" };
-  const { z, x0, z0, z1, group } = RM;
-  const put = async (slot, place) => { const it = item(slot); if (!it || !SL[slot]) return; const svg = it.draw(o); if (!svg) return; const c = await svgCanvas(svg, SL[slot].box); if (c) place(c, svg, it); };
-  await put("wallA", c => { const t = cropAlpha(c); if (!t) return; RM.poster.visible = false; const m = card(t, .95); m.rotation.y = Math.PI; group.add(at(m, -3.6, 1.75, z1 - .02)); });
-  await put("wallB", c => { const t = cropAlpha(c); if (!t) return; const m = card(t, .85); group.add(at(m, -2.9, 1.8, z0 + .02)); });
-  await put("top", c => { const t = cropAlpha(c); if (!t) return; const m = card(t, .42); m.rotation.y = Math.PI / 2; group.add(at(m, -5.0, 1.9 + .21, z + 1.35)); });
-  await put("corner", c => { const t = cropAlpha(c); if (!t) return; const h = Math.min(1.5, .55 + t.height / 260); const m = card(t, h); m.rotation.y = Math.PI / 2 + .5; group.add(at(m, -2.35, h / 2, z + 1.25)); });
-  await put("rug", c => { const t = cropAlpha(c); if (!t) return; const m = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 2.0), new THREE.MeshStandardMaterial({ map: texOf(t), transparent: true, alphaTest: .05, roughness: 1 })); m.material.map.rotation = Math.PI / 2; m.material.map.center.set(.5, .5); m.rotation.x = -Math.PI / 2; group.add(at(m, -3.3, .006, z)); });
-  await put("locker", c => { const m = plane(.9, .4, new THREE.MeshStandardMaterial({ map: texOf(c), roughness: .7 })); group.add(at(m, -3.8, .2, z0 + .3 + .226)); });
-  await put("blanket", c => { const t = texOf(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; for (const m of RM.mats) { m.material.map = t; m.material.color.set(0xffffff); m.material.needsUpdate = true; } });
-  await put("pillow", (c, svg) => { const col = colorsIn(svg)[0]; if (col) for (const p of RM.pillows) p.material.color.set(col); });
-  await put("lights", (c, svg) => {
-    const cols = [...new Set(colorsIn(svg))].slice(0, 6); if (!cols.length) return;
-    const n = 26, pts = [];
-    for (let i = 0; i < n; i++) { const t = i / (n - 1); pts.push([x0 + .1, z0 + .1 + t * (z1 - z0 - .2)]); }
-    pts.forEach(([x, zz], i) => { const b = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), new THREE.MeshBasicMaterial({ color: cols[i % cols.length] })); group.add(at(b, x, H - .18 - Math.sin(i / (n - 1) * Math.PI) * .25, zz)); });
+  ED.RM = RM; await loadEditor(); const run = ++decoRun;
+  const { z, x0, z0, z1, group } = RM, o = { lvl: MINE >= 0 ? LEVELS[MINE][0] : "B1" };
+  const next = new THREE.Group(); // build the new look off-screen, then swap
+  const reset = () => { RM.poster.visible = true; for (const m of RM.mats) { m.material.map = null; m.material.color.set(0x3f6b35); m.material.needsUpdate = true; } for (const p of RM.pillows) p.material.color.set(0xe8e4d6); RM.light.color.set(0xffe0a0); };
+  const jobs = [], todo = [];
+  const put = (slot, place) => { const it = worn(slot); if (!it || !ED.SL[slot]) return; const svg = it.draw(o); if (!svg) return; jobs.push(svgCanvas(svg, ED.SL[slot].box).then(c => { if (c) todo.push(() => place(c, svg, it)); })); };
+  put("wallA", c => { const t = cropAlpha(c); if (!t) return; RM.poster.visible = false; const m = card(t, .95); m.rotation.y = Math.PI; next.add(at(m, -3.6, 1.75, z1 - .02)); });
+  put("wallB", c => { const t = cropAlpha(c); if (!t) return; next.add(at(card(t, .85), -2.9, 1.8, z0 + .02)); });
+  put("top", c => { const t = cropAlpha(c); if (!t) return; const m = card(t, .42); m.rotation.y = Math.PI / 2; next.add(at(m, -5.0, 2.11, z + 1.35)); });
+  put("corner", c => { const t = cropAlpha(c); if (!t) return; const h = Math.min(1.5, .55 + t.height / 260), m = card(t, h); m.rotation.y = Math.PI / 2 + .5; next.add(at(m, -2.35, h / 2, z + 1.25)); });
+  put("rug", c => { const t = cropAlpha(c); if (!t) return; const tx = texOf(t); tx.rotation = Math.PI / 2; tx.center.set(.5, .5); const m = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 2.0), new THREE.MeshStandardMaterial({ map: tx, transparent: true, alphaTest: .05, roughness: 1 })); m.rotation.x = -Math.PI / 2; next.add(at(m, -3.3, .006, z)); });
+  put("locker", c => { next.add(at(plane(.9, .4, new THREE.MeshStandardMaterial({ map: texOf(c), roughness: .7 })), -3.8, .2, z0 + .526)); });
+  put("blanket", c => { const t = texOf(c); for (const m of RM.mats) { m.material.map = t; m.material.color.set(0xffffff); m.material.needsUpdate = true; } });
+  put("pillow", (c, svg) => { const col = colorsIn(svg)[0]; if (col) for (const p of RM.pillows) p.material.color.set(col); });
+  put("lights", (c, svg) => {
+    const cols = [...new Set(colorsIn(svg))].slice(0, 6); if (!cols.length) return; const n = 26;
+    for (let i = 0; i < n; i++) { const t = i / (n - 1), b = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), new THREE.MeshBasicMaterial({ color: cols[i % cols.length] })); next.add(at(b, x0 + .1, H - .18 - Math.sin(t * Math.PI) * .25, z0 + .1 + t * (z1 - z0 - .2))); }
     RM.light.color.set(cols[0]).lerp(new THREE.Color(0xffe0a0), .6);
   });
-  if (petSnap && petSnap.svg) {
-    const A = { cat: [160, 168], dog: [160, 326], rabbit: [196, 330], critter: [200, 330], bird: [262, 262], fish: [96, 240], rodent: [262, 290], snake: [258, 292], lizard: [258, 292], turtle: [258, 292] }[petSnap.k] || [200, 330];
-    const c = await svgCanvas(petSnap.svg, [A[0] - 62, A[1] - 52, 124, 82], 4), t = c && cropAlpha(c);
-    if (t) { const onBunk = petSnap.k === "cat", h = Math.min(.75, Math.max(.3, t.height / 4 / 90)); const m = card(t, h); m.rotation.y = Math.PI / 2; group.add(at(m, onBunk ? -4.5 : -3.3, (onBunk ? .64 : 0) + h / 2, onBunk ? z + .4 : z + .55)); RM.pet = m; }
+  if (ED.petSnap && ED.petSnap.svg) {
+    const k = ED.petSnap.k, A = { cat: [160, 168], dog: [160, 326], rabbit: [196, 330], critter: [200, 330], bird: [262, 262], fish: [96, 240], rodent: [262, 290], snake: [258, 292], lizard: [258, 292], turtle: [258, 292] }[k] || [200, 330];
+    jobs.push(svgCanvas(ED.petSnap.svg, [A[0] - 62, A[1] - 52, 124, 82], 4).then(c => { const t = c && cropAlpha(c); if (t) todo.push(() => { const onBunk = k === "cat", h = Math.min(.75, Math.max(.3, t.height / 4 / 90)), m = card(t, h); m.rotation.y = Math.PI / 2; next.add(at(m, onBunk ? -4.5 : -3.3, (onBunk ? .64 : 0) + h / 2, onBunk ? z + .4 : z + .55)); }); }));
+  }
+  await Promise.all(jobs);
+  if (run !== decoRun) return; // a newer change won
+  reset(); todo.forEach(f => f());
+  if (RM.deco) group.remove(RM.deco); RM.deco = next; group.add(next);
+  if (!RM.hot) { // invisible tap targets: tap a spot in your room to change what goes there
+    const hot = new THREE.Group(), inv = new THREE.MeshBasicMaterial({ visible: false }), add = (slot, w, h, d, x, y, zz) => { const m = box(w, h, d, inv); m.userData.slot = slot; hot.add(at(m, x, y, zz)); };
+    add("wallA", 1.1, 1.1, .1, -3.6, 1.75, z1 - .05); add("wallB", 1.1, 1.0, .1, -2.9, 1.8, z0 + .05); add("top", .5, .5, .5, -5.0, 2.15, z + 1.35);
+    add("corner", .8, 1.4, .8, -2.35, .7, z + 1.2); add("rug", 1.2, .05, 2.0, -3.3, .03, z); add("locker", .95, .45, .5, -3.8, .22, z0 + .3);
+    add("blanket", .9, .3, 1.5, -4.85, .62, z + .25); add("blanket", .9, .3, 1.5, -4.85, 1.62, z + .25); add("pillow", .65, .2, .4, -4.85, .74, z - .75); add("pillow", .65, .2, .4, -4.85, 1.74, z - .75);
+    add("lights", 3.2, .2, 3.2, -3.6, H - .15, z);
+    group.add(hot); RM.hot = hot;
   }
 }
+
+// ---------- editor UI ----------
+async function thumb(it) {
+  if (ED.thumbs[it.id]) return ED.thumbs[it.id];
+  const c = await svgCanvas(it.draw({ lvl: MINE >= 0 ? LEVELS[MINE][0] : "B1" }), ED.SL[it.slot].box, 2), t = c && cropAlpha(c);
+  return ED.thumbs[it.id] = t ? t.toDataURL() : "";
+}
+async function renderEd() {
+  const st = ED.st; $("edCoins").textContent = fmt(st.coins);
+  $("edTabs").innerHTML = EDIT_SLOTS.map(([k, n]) => `<button type="button" data-s="${k}" class="${ED.slot === k ? "on" : ""}">${n}</button>`).join("");
+  const list = ED.ITEMS.filter(i => ED.slot === "all" || i.slot === ED.slot).sort((a, b) => a.c - b.c);
+  const urls = await Promise.all(list.map(thumb));
+  $("edGrid").innerHTML = list.map((i, k) => { const own = st.own.includes(i.id), on = st.eq[i.slot] === i.id;
+    return `<button type="button" data-i="${i.id}" class="${ED.sel === i.id ? "sel " : ""}${on ? "on " : ""}${i.rare ? "rare" : ""}"><span class="th">${urls[k] ? `<img src="${urls[k]}" alt="">` : ""}</span><b>${i.n}</b><small>${on ? "In your room" : own ? "Owned" : `<i class="cn"></i>${fmt(i.c)}`}</small></button>`; }).join("");
+  const i = ED.sel && ED.BY[ED.sel], bar = $("edAct");
+  if (!i) { bar.innerHTML = `<span class="tip">Tap an item to try it on. Tap something in your room to change it.</span>`; return; }
+  const own = st.own.includes(i.id), on = st.eq[i.slot] === i.id;
+  bar.innerHTML = `<div class="nm"><b>${i.n}</b><small>${i.d}</small></div>` + (on ? `<button type="button" data-a="off" class="ghost">Take off</button>` : own ? `<button type="button" data-a="on" class="go sm">PUT IT ON</button>` : st.coins >= i.c ? `<button type="button" data-a="buy" class="go sm">BUY · ${fmt(i.c)}</button>` : `<a class="ghost" href="/room/" data-a="earn">Need ${fmt(i.c - st.coins)} more · Play</a>`);
+}
+const FOCUS = { all: [-4.6, 1.2, 0], blanket: [-4.85, .9, .1], pillow: [-4.85, 1.0, -.7], wallA: [-3.6, 1.75, 1.7], wallB: [-2.9, 1.8, -1.7], top: [-5.0, 2.0, 1.35], corner: [-2.35, .7, 1.25], rug: [-3.3, 0, 0], locker: [-3.8, .25, -1.4], lights: [-4.2, 2.9, 0] };
+const CAMAT = { corner: [-4.3, -.6], locker: [-3.0, .9], wallB: [-2.5, 1.1], wallA: [-2.5, -1.1] };
+function focus(slot) {
+  if (!F.myZ) return; const f = FOCUS[slot] || FOCUS.all, c = CAMAT[slot] || [-2.05, 0], cx = c[0], cz = F.myZ + c[1], tx = f[0], ty = f[1], tz = F.myZ + f[2];
+  const dx = tx - cx, dz = tz - cz, dy = ty - 1.62;
+  ED.cam = { x: cx, z: cz, yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)), t: 0 };
+}
+function openEd(slot) {
+  if (MINE < 0) return;
+  loadEditor().then(() => {
+    ED.open = true; ED.slot = slot || ED.slot || "all"; ED.sel = null; ED.preview = null;
+    document.body.classList.add("editing"); $("editor").classList.add("on");
+    focus(ED.slot);
+    renderEd(); ev("walk-editor");
+  });
+}
+function closeEd() { ED.open = false; ED.cam = null; ED.sel = null; if (ED.preview) { ED.preview = null; decorate(ED.RM); } document.body.classList.remove("editing"); $("editor").classList.remove("on"); }
+$("edTabs").onclick = e => { const b = e.target.closest("[data-s]"); if (!b) return; ED.slot = b.dataset.s; focus(ED.slot); renderEd(); };
+$("edGrid").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; ED.sel = b.dataset.i; ED.preview = ED.st.eq[ED.BY[ED.sel].slot] === ED.sel ? null : ED.sel; focus(ED.BY[ED.sel].slot); decorate(ED.RM); renderEd(); };
+$("edAct").onclick = e => {
+  const b = e.target.closest("[data-a]"); if (!b) return; const i = ED.BY[ED.sel], st = ED.st;
+  if (b.dataset.a === "earn") { try { sessionStorage.setItem("bunkerOpenPlay", "1"); } catch (x) {} return; }
+  if (b.dataset.a === "buy" && st.coins >= i.c && !st.own.includes(i.id)) { st.coins -= i.c; st.own.push(i.id); st.eq[i.slot] = i.id; ev("buy-" + i.id); tone(660, .12, "triangle", .12); tone(990, .2, "triangle", .1, .1); }
+  if (b.dataset.a === "on") st.eq[i.slot] = i.id;
+  if (b.dataset.a === "off") delete st.eq[i.slot];
+  ED.preview = null; saveRoom(); decorate(ED.RM); renderEd();
+};
+$("edDone").onclick = closeEd;
+$("edPlay").onclick = () => { try { sessionStorage.setItem("bunkerOpenPlay", "1"); } catch (x) {} };
 
 // ---------- lights ----------
 scene.add(new THREE.HemisphereLight(0xfff2d8, 0x2a2014, .95));
@@ -351,7 +422,15 @@ el.addEventListener("pointermove", e => {
   if (t.left) stick(e);
   else { const dx = e.clientX - t.x, dy = e.clientY - t.y; S.yaw = t.yaw - dx * .006; S.pitch = Math.max(-.7, Math.min(.7, t.pitch - dy * .004)); }
 });
-const up = e => { const t = touches.get(e.pointerId); if (t && t.left) { move.x = move.y = 0; joy.classList.remove("on"); knob.style.transform = ""; } touches.delete(e.pointerId); };
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function tapAt(cx, cy) {
+  if (!S.inRoom || !F.room || !F.room.hot) return;
+  ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); ray.setFromCamera(ndc, cam);
+  const hit = ray.intersectObjects(F.room.hot.children, false)[0]; if (!hit) return;
+  if (ED.open) { ED.slot = hit.object.userData.slot; focus(ED.slot); ED.sel = null; if (ED.preview) { ED.preview = null; decorate(ED.RM); } renderEd(); } else openEd(hit.object.userData.slot);
+}
+const up = e => { const t0 = touches.get(e.pointerId); if (t0 && !t0.left && Math.hypot(e.clientX - t0.x, e.clientY - t0.y) < 8) tapAt(e.clientX, e.clientY);
+  const t = touches.get(e.pointerId); if (t && t.left) { move.x = move.y = 0; joy.classList.remove("on"); knob.style.transform = ""; } touches.delete(e.pointerId); };
 el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
 addEventListener("keydown", e => { keys[e.key.toLowerCase()] = true; });
 addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
@@ -382,7 +461,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   let moving = false;
-  if (started && !S.riding) {
+  if (started && !S.riding && !ED.open) {
     let mx = move.x, my = move.y;
     if (keys.w || keys.arrowup) my = -1; if (keys.s || keys.arrowdown) my = 1; if (keys.a) mx = -1; if (keys.d) mx = 1;
     if (keys.arrowleft) S.yaw += dt * 2; if (keys.arrowright) S.yaw -= dt * 2;
@@ -418,7 +497,7 @@ function frame(now) {
     if (p0 === 0 && S.myDoor > 0) { thud(.3, 260); if (!S.doorFirst) { S.doorFirst = 1; ev("walk-door"); } }
     F.mine.leaf.rotation.y = S.myDoor * 1.7;
   }
-  $("roomBar").classList.toggle("on", S.inRoom);
+  $("roomBar").classList.toggle("on", S.inRoom && !ED.open);
   $("tRoom").hidden = MINE < 0 || S.inRoom; $("tLift").hidden = S.inLift; $("tDoor").hidden = S.lvl === 0 && S.z > F.blastZ - 6;
   if (S.inRoom && !S.roomFirst) { S.roomFirst = 1; ev("walk-room"); tone(523, .3, "sine", .12); tone(784, .5, "sine", .1, .18); }
   const gl = started ? goal() : null;
@@ -428,6 +507,8 @@ function frame(now) {
     $("gtext").textContent = gl.text + (dist > 2.5 && S.lvl === MINE ? ` · ${Math.round(dist)} m` : "");
     $("guide").classList.add("on");
   } else $("guide").classList.remove("on");
+  if (ED.open && ED.cam) { const c = ED.cam, k = Math.min(1, dt * 5); c.t += dt; if (c.t < 1.2) { S.x += (c.x - S.x) * k; S.z += (c.z - S.z) * k; let dy = c.yaw - S.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); S.yaw += dy * k; S.pitch += (c.pitch - S.pitch) * k; } }
+  const off = ED.open ? innerHeight * .26 : 0; if (off !== (cam.view && cam.view.enabled ? cam.view.offsetY : 0)) { if (off) cam.setViewOffset(innerWidth, innerHeight, 0, off, innerWidth, innerHeight); else cam.clearViewOffset(); }
   const bob = moving ? Math.sin(now / 110) * .03 : 0, shake = S.riding && S.liftDoor <= .001 ? Math.sin(now / 25) * .004 : 0;
   cam.position.set(S.x + shake, 1.62 + bob, S.z);
   cam.rotation.set(S.pitch, S.yaw, 0);
@@ -444,7 +525,7 @@ function start() {
   setTimeout(() => $("hint").classList.add("on"), 600); setTimeout(() => $("hint").classList.remove("on"), 7000);
 }
 $("start").onclick = start;
-$("roomGo").href = roomUrl;
+$("roomGo").onclick = e => { e.preventDefault(); openEd("all"); };
 $("start").disabled = false; $("start").textContent = "▶ ENTER";
 // ---------- quick travel ----------
 let travelling = false;
