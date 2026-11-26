@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="robots" content="noindex">
+<title>Explore the bunker · Join the Bunker</title>
+<style>
+@font-face{font-family:Anton;src:url(/scene/fonts/Anton-Regular.ttf);font-display:block}
+:root{color-scheme:dark;--ink:#efe8d4;--muted:#b3aa90;--gold:#ffc23a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#000;color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+.chip{position:fixed;z-index:5;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;background:rgba(11,7,5,.74);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);font:600 13px Inter,sans-serif;text-decoration:none;border:0}
+#back{top:calc(14px + env(safe-area-inset-top));left:14px}
+#floorChip{top:calc(14px + env(safe-area-inset-top));right:14px;color:var(--gold);max-width:56vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#guide{top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);opacity:0;transition:opacity .4s;pointer-events:none}
+#guide.on{opacity:1}
+#garrow{display:inline-block;width:20px;height:20px;color:var(--gold);transition:transform .1s linear}
+.hint{position:fixed;left:0;right:0;bottom:calc(110px + env(safe-area-inset-bottom));z-index:4;display:flex;justify-content:space-between;padding:0 24px;font:600 13px Inter,sans-serif;color:var(--ink);opacity:0;transition:opacity .6s;pointer-events:none}
+.hint span{background:rgba(11,7,5,.7);padding:8px 12px;border-radius:12px;max-width:44vw;text-align:center}
+.hint.on{opacity:1}
+#joy{position:fixed;z-index:4;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(255,194,58,.5);background:rgba(11,7,5,.25);opacity:0;pointer-events:none;transition:opacity .15s}
+#joy.on{opacity:1}
+#knob{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(255,194,58,.75)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:16px 14px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.88) 24%);transform:translateY(110%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.sheet.on{transform:none}
+.sheet .k{font:600 12px Inter,sans-serif;letter-spacing:.14em;color:var(--muted);margin:0 2px 8px}
+#liftBtns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#liftBtns button{position:relative;min-height:64px;border-radius:12px;border:2px solid #4a3a22;background:rgba(29,20,13,.92);color:var(--ink);font:600 10px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;cursor:pointer;line-height:1.15}
+#liftBtns button b{font:400 22px Anton,sans-serif;letter-spacing:.03em}
+#liftBtns button span{color:var(--muted);text-align:center}
+#liftBtns button i{position:absolute;top:-8px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 9px Inter,sans-serif;font-style:normal;background:var(--gold);color:#15100a;border-radius:999px;padding:2px 6px}
+#liftBtns button.cur{border-color:var(--gold);color:var(--gold)}
+.go{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:0 24px;border-radius:14px;border:0;background:var(--gold);color:#15100a;font:400 20px Anton,sans-serif;letter-spacing:1px;text-decoration:none;cursor:pointer;box-shadow:0 8px 28px #ffc23a44}
+.go:disabled{opacity:.6}
+.cover{position:fixed;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(80% 60% at 50% 40%,#2a1f12,#000);text-align:center;padding:24px;transition:opacity .5s}
+.cover.off{opacity:0;pointer-events:none}
+.cover h1{margin:0;font:400 44px Anton,sans-serif;letter-spacing:.02em;line-height:1}
+.cover h1 b{color:var(--gold);font-weight:400}
+.cover p{margin:0;color:var(--muted);font-size:15px;max-width:32ch;line-height:1.45}
+.cover ul{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:14px;color:var(--ink)}
+</style>
+</head>
+<body>
+<a id="back" class="chip" href="/">← Back</a>
+<div id="floorChip" class="chip">B1</div>
+<div id="guide" class="chip"><svg id="garrow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l7 18-7-4-7 4z"/></svg><span id="gtext"></span></div>
+<div class="hint" id="hint"><span>Left thumb: walk</span><span>Right thumb: look around</span></div>
+<div id="joy"><div id="knob"></div></div>
+<div class="sheet" id="liftPanel"><div class="k">LIFT · PICK A FLOOR</div><div id="liftBtns"></div></div>
+<div class="sheet" id="roomBar"><div class="k">YOUR ROOM</div><a class="go" id="roomGo" href="/room/">DECORATE MY ROOM <span>→</span></a></div>
+<div class="cover" id="cover">
+  <div style="font:600 12px Inter,sans-serif;letter-spacing:.16em;color:#b3aa90">JOIN THE BUNKER</div>
+  <h1 id="ctitle">ENTER<br><b>THE BUNKER</b></h1>
+  <p id="csub">Walk in, ride the lift, find your door.</p>
+  <ul><li>Left thumb to walk</li><li>Right thumb to look around</li><li>On a computer: W A S D and drag</li></ul>
+  <button class="go" id="start" type="button" disabled>LOADING…</button>
+</div>
+<script type="module" src="walk.js"></script>
+</body>
+</html>
