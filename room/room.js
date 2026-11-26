@@ -157,6 +157,7 @@ function draw() {
   if (!it("locker")) a(`<rect x="70" y="252" width="96" height="46" rx="3" fill="#4f5a3a" stroke="#121210" stroke-width="1.5"/><rect x="70" y="262" width="96" height="5" fill="#00000040"/><rect x="112" y="270" width="12" height="10" rx="2" fill="#f2c230" stroke="#121210"/>`);
   it("top"); it("corner");
   // pet
+  const petAt = W.length;
   if (pet) {
     const [k, , name, n] = pet; const two = n > 1, pb = worn("petbed"), toy = worn("pettoy"), hat = worn("pethat");
     if (k === "cat") { if (pb) a(cushion(pb, 160, 182, 42, 9)); if (two) a(sp.cat(100, 170, .85, 1)); a(sp.cat(160, 168)); a(bowl(256, 318, name.split(" & ")[0])); }
@@ -170,6 +171,7 @@ function draw() {
     if (toy) a(toy.draw(o));
     if (hat && HEAD[k]) a(crown(...HEAD[k]));
   }
+  try { localStorage.setItem("bunkerPetSvg:" + handle, pet ? JSON.stringify({ k: pet[0], svg: W.slice(petAt).join("") }) : ""); } catch (e) {} // the 3D bunker shows the same pet
   a(`<path d="M0 60 L14 66 V312 L0 318Z" fill="#5e5a48" stroke="#121210" stroke-width="1.5"/>`);
   $("room").innerHTML = W.join("");
   $("coinN").textContent = fmt(st.coins);

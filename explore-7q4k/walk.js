@@ -162,13 +162,15 @@ function yourRoom(group, z) {
   const back = plane(z1 - z0, H, M.wall); back.rotation.y = -Math.PI / 2; // the corridor wall seen from inside the room
   const bunk = new THREE.Group(); bunk.position.set(-4.85, 0, z);
   for (const dz of [-1, 1]) for (const dx of [-.4, .4]) bunk.add(at(box(.07, 1.9, .07, M.dark), dx, .95, dz * .95));
-  for (const y of [.45, 1.45]) { bunk.add(at(box(.9, .1, 2.0, M.dark), 0, y, 0)); bunk.add(at(box(.85, .14, 1.9, M.green), 0, y + .12, 0)); bunk.add(at(box(.6, .1, .3, M.white), 0, y + .24, -.75)); }
+  const RM = { mats: [], pillows: [], z, x0, x1, z0, z1, group };
+  for (const y of [.45, 1.45]) { bunk.add(at(box(.9, .1, 2.0, M.dark), 0, y, 0)); const m = box(.85, .14, 1.9, M.green.clone()); RM.mats.push(m); bunk.add(at(m, 0, y + .12, 0)); const pw = box(.6, .1, .3, M.white.clone()); RM.pillows.push(pw); bunk.add(at(pw, 0, y + .24, -.75)); }
   group.add(bunk);
   group.add(at(box(.5, 1.9, .5, M.steel), -5.1, .95, z + 1.35));
   group.add(at(box(.9, .4, .45, M.olive), -3.8, .2, z - 1.4));
-  const poster = plane(.6, .8, new THREE.MeshBasicMaterial({ map: label("SURVIVE", { w: 256, h: 340, size: 60, fg: "#15100a", bg: "#ffc23a" }) })); poster.rotation.y = Math.PI; group.add(at(poster, -3.6, 1.7, z1 - .01));
+  const poster = plane(.6, .8, new THREE.MeshBasicMaterial({ map: label("SURVIVE", { w: 256, h: 340, size: 60, fg: "#15100a", bg: "#ffc23a" }) })); poster.rotation.y = Math.PI; group.add(at(poster, -3.6, 1.7, z1 - .01)); RM.poster = poster;
   const plate = plane(1.6, .32, new THREE.MeshBasicMaterial({ map: label(`BED ${fmt(bed)} · @${handle}`, { w: 1024, h: 205, size: 80, fg: "#15100a", bg: "#ffc23a" }) })); plate.rotation.y = Math.PI / 2; group.add(at(plate, x0 + .01, 2.5, z));
-  group.add(at(new THREE.PointLight(0xffe0a0, 4, 6, 1.5), -3.6, 2.7, z));
+  RM.light = new THREE.PointLight(0xffe0a0, 4, 6, 1.5); group.add(at(RM.light, -3.6, 2.7, z));
+  return RM;
   group.add(at(box(.6, .04, .6, new THREE.MeshBasicMaterial({ color: 0xffe9b0 })), -3.6, H - .02, z));
 }
 function theme(group, i, cz) {
@@ -233,8 +235,64 @@ function buildFloor(i) {
     g.add(at(new THREE.PointLight(tint, 4, 9, 1.4), 0, 2.6, cz));
     out.walk.push({ x0: -3.3, x1: 3.3, z0: CEND - .1, z1: z2 - .05 });
   }
-  if (myZ !== null) { yourRoom(g, myZ); out.roomWalk = { x0: -5.15, x1: -1.7, z0: myZ - 1.45, z1: myZ + 1.45 }; out.doorGap = { x0: -2.3, x1: -1.3, z0: myZ - .5, z1: myZ + .5 }; }
+  if (myZ !== null) { out.room = yourRoom(g, myZ); decorate(out.room); out.roomWalk = { x0: -5.15, x1: -1.7, z0: myZ - 1.45, z1: myZ + 1.45 }; out.doorGap = { x0: -2.3, x1: -1.3, z0: myZ - .5, z1: myZ + .5 }; }
   floors[i] = out; return out;
+}
+
+
+// ---------- your saved room, in 3D ----------
+function loadScript(src) { return new Promise(r => { const sc = document.createElement("script"); sc.src = src; sc.onload = () => r(true); sc.onerror = () => r(false); document.head.appendChild(sc); }); }
+function svgCanvas(inner, vb, scale = 4) {
+  return new Promise(res => {
+    const [x, y, w, h] = vb, svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${w * scale}" height="${h * scale}">${inner}</svg>`;
+    const img = new Image(); img.onload = () => { const c = document.createElement("canvas"); c.width = w * scale; c.height = h * scale; c.getContext("2d").drawImage(img, 0, 0); res(c); }; img.onerror = () => res(null);
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+}
+function cropAlpha(c) { // trim transparent edges
+  const g = c.getContext("2d"), d = g.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) return null; const o = document.createElement("canvas"); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1; o.getContext("2d").drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height); return o;
+}
+const texOf = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+function card(c, hgt) { // a cut-out standing in the room
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(hgt * c.width / c.height, hgt), new THREE.MeshStandardMaterial({ map: texOf(c), transparent: true, alphaTest: .05, side: THREE.DoubleSide, roughness: .8 }));
+  return m;
+}
+const colorsIn = svg => [...svg.matchAll(/fill="(#[0-9a-fA-F]{6})"/g)].map(m => m[1]).filter(c => !/^#1[0-2]1[0-2]1[0-2]$/i.test(c));
+let roomData = null;
+async function decorate(RM) {
+  if (!roomData) {
+    let st = null; try { st = JSON.parse(localStorage.getItem("bunkerRoom:" + handle)); } catch (e) {}
+    let petSnap = null; try { petSnap = JSON.parse(localStorage.getItem("bunkerPetSvg:" + handle) || "null"); } catch (e) {}
+    const okItems = await loadScript("/room/items.js");
+    roomData = { st, petSnap, BY: okItems && window.BK_ITEMS ? window.BK_ITEMS.BY : {} , SL: okItems && window.BK_ITEMS ? window.BK_ITEMS.SLOTS : {} };
+  }
+  const { st, petSnap, BY, SL } = roomData, MIG = { blanket: "blanket-red", poster: "poster-sunset", lights: "lights-rainbow", rug: "rug-braided", plant: "corner-plant", radio: "top-radio", petbed: "pet-cushion-blue", flag: "wall-banner-gold" };
+  const eq = {}; if (st) { Object.assign(eq, st.eq || {}); if (st.on) for (const x of st.on) { const id = MIG[x] || x; if (BY[id]) eq[BY[id].slot] = id; } }
+  const item = s => BY[eq[s]] || null, o = { lvl: MINE >= 0 ? LEVELS[MINE][0] : "B1" };
+  const { z, x0, z0, z1, group } = RM;
+  const put = async (slot, place) => { const it = item(slot); if (!it || !SL[slot]) return; const svg = it.draw(o); if (!svg) return; const c = await svgCanvas(svg, SL[slot].box); if (c) place(c, svg, it); };
+  await put("wallA", c => { const t = cropAlpha(c); if (!t) return; RM.poster.visible = false; const m = card(t, .95); m.rotation.y = Math.PI; group.add(at(m, -3.6, 1.75, z1 - .02)); });
+  await put("wallB", c => { const t = cropAlpha(c); if (!t) return; const m = card(t, .85); group.add(at(m, -2.9, 1.8, z0 + .02)); });
+  await put("top", c => { const t = cropAlpha(c); if (!t) return; const m = card(t, .42); m.rotation.y = Math.PI / 2; group.add(at(m, -5.0, 1.9 + .21, z + 1.35)); });
+  await put("corner", c => { const t = cropAlpha(c); if (!t) return; const h = Math.min(1.5, .55 + t.height / 260); const m = card(t, h); m.rotation.y = Math.PI / 2 + .5; group.add(at(m, -2.35, h / 2, z + 1.25)); });
+  await put("rug", c => { const t = cropAlpha(c); if (!t) return; const m = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 2.0), new THREE.MeshStandardMaterial({ map: texOf(t), transparent: true, alphaTest: .05, roughness: 1 })); m.material.map.rotation = Math.PI / 2; m.material.map.center.set(.5, .5); m.rotation.x = -Math.PI / 2; group.add(at(m, -3.3, .006, z)); });
+  await put("locker", c => { const m = plane(.9, .4, new THREE.MeshStandardMaterial({ map: texOf(c), roughness: .7 })); group.add(at(m, -3.8, .2, z0 + .3 + .226)); });
+  await put("blanket", c => { const t = texOf(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; for (const m of RM.mats) { m.material.map = t; m.material.color.set(0xffffff); m.material.needsUpdate = true; } });
+  await put("pillow", (c, svg) => { const col = colorsIn(svg)[0]; if (col) for (const p of RM.pillows) p.material.color.set(col); });
+  await put("lights", (c, svg) => {
+    const cols = [...new Set(colorsIn(svg))].slice(0, 6); if (!cols.length) return;
+    const n = 26, pts = [];
+    for (let i = 0; i < n; i++) { const t = i / (n - 1); pts.push([x0 + .1, z0 + .1 + t * (z1 - z0 - .2)]); }
+    pts.forEach(([x, zz], i) => { const b = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), new THREE.MeshBasicMaterial({ color: cols[i % cols.length] })); group.add(at(b, x, H - .18 - Math.sin(i / (n - 1) * Math.PI) * .25, zz)); });
+    RM.light.color.set(cols[0]).lerp(new THREE.Color(0xffe0a0), .6);
+  });
+  if (petSnap && petSnap.svg) {
+    const A = { cat: [160, 168], dog: [160, 326], rabbit: [196, 330], critter: [200, 330], bird: [262, 262], fish: [96, 240], rodent: [262, 290], snake: [258, 292], lizard: [258, 292], turtle: [258, 292] }[petSnap.k] || [200, 330];
+    const c = await svgCanvas(petSnap.svg, [A[0] - 62, A[1] - 52, 124, 82], 4), t = c && cropAlpha(c);
+    if (t) { const onBunk = petSnap.k === "cat", h = Math.min(.75, Math.max(.3, t.height / 4 / 90)); const m = card(t, h); m.rotation.y = Math.PI / 2; group.add(at(m, onBunk ? -4.5 : -3.3, (onBunk ? .64 : 0) + h / 2, onBunk ? z + .4 : z + .55)); RM.pet = m; }
+  }
 }
 
 // ---------- lights ----------
