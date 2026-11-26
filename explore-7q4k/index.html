@@ -17,12 +17,16 @@ canvas{display:block;width:100vw;height:100dvh;touch-action:none}
 #guide{top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);opacity:0;transition:opacity .4s;pointer-events:none}
 #guide.on{opacity:1}
 #garrow{display:inline-block;width:20px;height:20px;color:var(--gold);transition:transform .1s linear}
-.hint{position:fixed;left:0;right:0;bottom:calc(110px + env(safe-area-inset-bottom));z-index:4;display:flex;justify-content:space-between;padding:0 24px;font:600 13px Inter,sans-serif;color:var(--ink);opacity:0;transition:opacity .6s;pointer-events:none}
+.hint{position:fixed;left:0;right:0;bottom:calc(200px + env(safe-area-inset-bottom));z-index:4;display:flex;justify-content:space-between;padding:0 24px;font:600 13px Inter,sans-serif;color:var(--ink);opacity:0;transition:opacity .6s;pointer-events:none}
 .hint span{background:rgba(11,7,5,.7);padding:8px 12px;border-radius:12px;max-width:44vw;text-align:center}
 .hint.on{opacity:1}
-#joy{position:fixed;z-index:4;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(255,194,58,.5);background:rgba(11,7,5,.25);opacity:0;pointer-events:none;transition:opacity .15s}
-#joy.on{opacity:1}
-#knob{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(255,194,58,.75)}
+#joy{position:fixed;z-index:4;left:calc(22px + env(safe-area-inset-left));bottom:calc(34px + env(safe-area-inset-bottom));width:128px;height:128px;border-radius:50%;border:2px solid rgba(255,194,58,.55);background:rgba(11,7,5,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none;transition:bottom .3s cubic-bezier(.2,.8,.2,1),opacity .3s;opacity:0}
+body.playing #joy{opacity:1}
+#joy.on{border-color:var(--gold);background:rgba(11,7,5,.6)}
+#joy::after{content:"WALK";position:absolute;left:0;right:0;bottom:-20px;text-align:center;font:700 10px Inter,sans-serif;letter-spacing:.16em;color:var(--muted)}
+#knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,194,58,.85);box-shadow:0 4px 14px rgba(0,0,0,.5)}
+body.lift #joy{bottom:calc(214px + env(safe-area-inset-bottom))}
+body.inroom #joy{bottom:calc(122px + env(safe-area-inset-bottom))}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:16px 14px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.88) 24%);transform:translateY(110%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .sheet.on{transform:none}
 .sheet .k{font:600 12px Inter,sans-serif;letter-spacing:.14em;color:var(--muted);margin:0 2px 8px}
@@ -46,7 +50,7 @@ canvas{display:block;width:100vw;height:100dvh;touch-action:none}
 <a id="back" class="chip" href="/">← Back</a>
 <div id="floorChip" class="chip">B1</div>
 <div id="guide" class="chip"><svg id="garrow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l7 18-7-4-7 4z"/></svg><span id="gtext"></span></div>
-<div class="hint" id="hint"><span>Left thumb: walk</span><span>Right thumb: look around</span></div>
+<div class="hint" id="hint"><span>Push the stick to walk</span><span>Drag here to look around</span></div>
 <div id="joy"><div id="knob"></div></div>
 <div class="sheet" id="liftPanel"><div class="k">LIFT · PICK A FLOOR</div><div id="liftBtns"></div></div>
 <div class="sheet" id="roomBar"><div class="k">YOUR ROOM</div><a class="go" id="roomGo" href="/room/">DECORATE MY ROOM <span>→</span></a></div>
@@ -54,7 +58,7 @@ canvas{display:block;width:100vw;height:100dvh;touch-action:none}
   <div style="font:600 12px Inter,sans-serif;letter-spacing:.16em;color:#b3aa90">JOIN THE BUNKER</div>
   <h1 id="ctitle">ENTER<br><b>THE BUNKER</b></h1>
   <p id="csub">Walk in, ride the lift, find your door.</p>
-  <ul><li>Left thumb to walk</li><li>Right thumb to look around</li><li>On a computer: W A S D and drag</li></ul>
+  <ul><li>Stick at the bottom left to walk</li><li>Right thumb to look around</li><li>On a computer: W A S D and drag</li></ul>
   <button class="go" id="start" type="button" disabled>LOADING…</button>
 </div>
 <script type="module" src="walk.js"></script>

@@ -278,18 +278,20 @@ function tryMove(dx, dz) {
 // ---------- controls: left thumb walks, right thumb looks; WASD + drag on a computer ----------
 const el = renderer.domElement, joy = $("joy"), knob = $("knob");
 const move = { x: 0, y: 0 }, touches = new Map(), keys = {};
+const joyCenter = () => { const r = joy.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+function stick(e) { const c = joyCenter(), dx = e.clientX - c.x, dy = e.clientY - c.y, m = Math.hypot(dx, dy), k = Math.min(1, m / 52); move.x = m ? dx / m * k : 0; move.y = m ? dy / m * k : 0; knob.style.transform = `translate(${move.x * 38}px,${move.y * 38}px)`; }
 el.addEventListener("pointerdown", e => {
   try { el.setPointerCapture(e.pointerId); } catch (x) {}
-  const left = e.clientX < innerWidth * .45 && e.pointerType !== "mouse";
+  const c = joyCenter(), nearStick = Math.hypot(e.clientX - c.x, e.clientY - c.y) < 110;
+  const left = e.pointerType !== "mouse" && (nearStick || e.clientX < innerWidth * .4);
   touches.set(e.pointerId, { left, x: e.clientX, y: e.clientY, yaw: S.yaw, pitch: S.pitch });
-  if (left) { joy.style.left = e.clientX + "px"; joy.style.top = e.clientY + "px"; joy.classList.add("on"); }
+  if (left) { joy.classList.add("on"); stick(e); }
   $("hint").classList.remove("on");
 });
 el.addEventListener("pointermove", e => {
   const t = touches.get(e.pointerId); if (!t) return;
-  const dx = e.clientX - t.x, dy = e.clientY - t.y;
-  if (t.left) { const m = Math.hypot(dx, dy), k = Math.min(1, m / 50); move.x = m ? dx / m * k : 0; move.y = m ? dy / m * k : 0; knob.style.transform = `translate(${move.x * 36}px,${move.y * 36}px)`; }
-  else { S.yaw = t.yaw - dx * .006; S.pitch = Math.max(-.7, Math.min(.7, t.pitch - dy * .004)); }
+  if (t.left) stick(e);
+  else { const dx = e.clientX - t.x, dy = e.clientY - t.y; S.yaw = t.yaw - dx * .006; S.pitch = Math.max(-.7, Math.min(.7, t.pitch - dy * .004)); }
 });
 const up = e => { const t = touches.get(e.pointerId); if (t && t.left) { move.x = move.y = 0; joy.classList.remove("on"); knob.style.transform = ""; } touches.delete(e.pointerId); };
 el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
@@ -351,7 +353,7 @@ function frame(now) {
       if (k >= 1) { humOn(false); tone(880, .25, "triangle", .14); showFloor(to); S.riding = 0; S.myDoor = 0; }
     }
   }
-  $("liftPanel").classList.toggle("on", started && S.inLift && !S.riding);
+  const lp = started && S.inLift && !S.riding; $("liftPanel").classList.toggle("on", lp); document.body.classList.toggle("lift", lp); document.body.classList.toggle("inroom", S.inRoom);
   if (F.mine) {
     const near = Math.hypot(S.x + 1.8, S.z - F.myZ) < 2.4 || S.inRoom, t = near ? 1 : 0, p0 = S.myDoor;
     S.myDoor += Math.sign(t - S.myDoor) * Math.min(Math.abs(t - S.myDoor), dt / .6);
@@ -377,7 +379,7 @@ requestAnimationFrame(frame);
 
 function start() {
   if (!ac) audioOn(); if (ac && ac.state === "suspended") ac.resume();
-  $("cover").classList.add("off"); started = true; ev("walk-start");
+  $("cover").classList.add("off"); started = true; document.body.classList.add("playing"); ev("walk-start");
   setTimeout(() => $("hint").classList.add("on"), 600); setTimeout(() => $("hint").classList.remove("on"), 7000);
 }
 $("start").onclick = start;
