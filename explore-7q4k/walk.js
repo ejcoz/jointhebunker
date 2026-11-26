@@ -173,14 +173,87 @@ function yourRoom(group, z) {
   return RM;
   group.add(at(box(.6, .04, .6, new THREE.MeshBasicMaterial({ color: 0xffe9b0 })), -3.6, H - .02, z));
 }
-function theme(group, i, cz) {
-  const t = LEVELS[i][0], P = (o, x, y, z) => group.add(at(o, x, y, z));
-  if (t === "B2") { for (const x of [-2.4, 2.4]) { P(box(.9, .5, 2, M.white), x, .45, cz); P(box(.9, .1, 2, M.dark), x, .2, cz); } const cross = new THREE.Group(); cross.add(box(.5, .14, .02, M.red)); cross.add(box(.14, .5, .02, M.red)); cross.rotation.y = Math.PI; P(cross, 0, 2.3, cz + 3.15); }
-  if (t === "B3") { for (const x of [-2.6, 2.6]) for (const dz of [-1.5, 0, 1.5]) { P(box(.9, .5, 1.1, M.wood), x, .25, cz + dz); for (let k = 0; k < 3; k++) P(new THREE.Mesh(new THREE.SphereGeometry(.22, 10, 8), M.green), x + rnd(-.25, .25), .65, cz + dz + rnd(-.3, .3)); } }
-  if (t === "B4") { P(box(1.2, .08, 3.6, M.wood), 0, .78, cz); P(box(.12, .74, .12, M.wood), 0, .37, cz - 1.5); P(box(.12, .74, .12, M.wood), 0, .37, cz + 1.5); for (const x of [-.95, .95]) P(box(.3, .45, 3.4, M.wood), x, .23, cz); for (const [x, z] of [[-2.9, cz - 2], [2.9, cz + 1.8], [2.8, cz - 2.2]]) P(box(.8, .8, .8, M.olive), x, .4, z); }
-  if (t === "B5") { for (const x of [-2.7, 2.7]) for (const dz of [-1.3, 1.3]) for (const y of [.45, 1.45]) { P(box(.9, .1, 2, M.dark), x, y, cz + dz); P(box(.85, .14, 1.9, M.green), x, y + .12, cz + dz); } }
-  if (t === "B6") { for (const x of [-3.3, 3.3]) { P(box(.3, 2.2, 3.4, M.dark), x, 1.1, cz); for (let k = -6; k <= 6; k++) P(box(.06, 1.2, .06, M.steel), x + (x < 0 ? .22 : -.22), 1.2, cz + k * .24); } }
-  if (t === "B7") { for (const x of [-2.5, 2.5]) { const g = new THREE.Mesh(new THREE.CylinderGeometry(.7, .7, 2.4, 20), M.steel); g.rotation.x = Math.PI / 2; P(g, x, .8, cz); P(box(1.6, .02, 2.6, M.hazard), x, .02, cz); } }
+// ---------- each floor's main area: a full room to walk around ----------
+const AREAS = { B2: "MED BAY", B3: "THE GARDEN", B4: "MESS HALL", B5: "DORMITORY", B6: "ARMORY", B7: "ENGINEERING" };
+const AW = 6, AD = 15; // half width, depth
+function mainArea(g, i, out) {
+  const Lv = LEVELS[i], t = Lv[0], tint = Lv[4], z0 = CEND, z1 = CEND + AD, cz = (z0 + z1) / 2;
+  const floorM = t === "B2" ? std({ map: canvasTex(256, 256, (c, w, h) => { noise(c, w, h, "#bdbcb2", .04, 900); c.strokeStyle = "rgba(0,0,0,.2)"; for (let k = 0; k <= w; k += 64) { c.beginPath(); c.moveTo(k, 0); c.lineTo(k, h); c.stroke(); c.beginPath(); c.moveTo(0, k); c.lineTo(w, k); c.stroke(); } }, [6, 7]), roughness: .6 })
+    : t === "B3" ? std({ map: canvasTex(256, 256, (c, w, h) => noise(c, w, h, "#3b2f22", .07, 2600), [5, 6]), roughness: 1 })
+    : std({ map: tileTex, roughness: .85 });
+  room(g, -AW, AW, z0, z1, 0, floorM);
+  wallX(g, -AW, z0, z1, 1); wallX(g, AW, z0, z1, -1); wallZ(g, z1, -AW, AW, -1);
+  wallZ(g, z0, 1.8, AW, 1); wallZ(g, z0, -AW, -1.8, 1);
+  const lampM = new THREE.MeshBasicMaterial({ color: t === "B3" ? 0xd36bff : tint });
+  for (let x = -3.5; x <= 3.5; x += 3.5) for (let z = z0 + 2.5; z < z1 - 1; z += 4) g.add(at(box(1.4, .05, .3, lampM), x, H - .03, z));
+  for (const [x, z] of [[-3, z0 + 3.5], [3, z0 + 3.5], [-3, z0 + 10.5], [3, z0 + 10.5]]) g.add(at(new THREE.PointLight(t === "B3" ? 0xd9a0ff : tint, 6, 11, 1.2), x, 2.7, z));
+  g.add(at(new THREE.PointLight(0xfff0d8, 3, 10, 1.2), 0, 2.7, cz));
+  sign(g, AREAS[t], 0, 2.66, z0 - .03, Math.PI, 2.2);
+  sign(g, AREAS[t], 0, 2.9, z1 - .03, Math.PI, 3.2);
+  const blocks = out.blocks = [];
+  // put something down; if it has a footprint, nobody can walk through it
+  const P = (o, x, y, z, w = 0, d = 0) => { g.add(at(o, x, y, z)); if (w && d) blocks.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 }); return o; };
+  const bunk = (x, z, rot = 0) => { const b = new THREE.Group(); for (const dz of [-1, 1]) for (const dx of [-.4, .4]) b.add(at(box(.07, 1.9, .07, M.dark), dx, .95, dz * .95)); for (const y of [.45, 1.45]) { b.add(at(box(.9, .1, 2.0, M.dark), 0, y, 0)); b.add(at(box(.85, .14, 1.9, M.green), 0, y + .12, 0)); b.add(at(box(.6, .1, .3, M.white), 0, y + .24, -.75)); } b.rotation.y = rot; return P(b, x, 0, z, rot ? 2.1 : 1.0, rot ? 1.0 : 2.1); };
+  const crate = (x, z, s = .8, m = M.olive) => P(box(s, s, s, m), x, s / 2, z, s, s);
+  const locker = (x, z, rot) => { const l = box(.55, 1.9, .5, M.steel); l.rotation.y = rot; return P(l, x, .95, z, .55, .55); };
+  if (t === "B2") { // med bay: two rows of beds with curtain rails, an operating table, cabinets
+    for (const side of [-1, 1]) for (let k = 0; k < 4; k++) {
+      const z = z0 + 3 + k * 2.6, x = side * (AW - 1.1), bed = new THREE.Group();
+      bed.add(at(box(1.9, .1, .9, M.steel), 0, .55, 0)); bed.add(at(box(1.8, .14, .85, M.white), 0, .67, 0)); bed.add(at(box(.35, .12, .6, M.white), side * .7, .8, 0));
+      for (const dx of [-.85, .85]) for (const dz of [-.38, .38]) bed.add(at(box(.05, .55, .05, M.steel), dx, .27, dz));
+      P(bed, x, 0, z, 1.9, .9);
+      const rail = box(.03, .03, 2.2, M.steel); P(rail, x - side * 1.05, 2.5, z);
+      const cur = plane(1.9, 1.7, std({ color: 0x9fc4c0, roughness: 1, side: THREE.DoubleSide, transparent: true, opacity: .85 })); cur.rotation.y = Math.PI / 2; P(cur, x - side * 1.05, 1.6, z + .25);
+      const iv = new THREE.Group(); iv.add(at(box(.04, 1.8, .04, M.steel), 0, .9, 0)); iv.add(at(box(.2, .28, .06, std({ color: 0xd8f0ff, transparent: true, opacity: .8 })), 0, 1.7, 0)); P(iv, x - side * .2, 0, z + .75, .2, .2);
+    }
+    const op = new THREE.Group(); op.add(at(box(2.0, .12, .8, M.steel), 0, .9, 0)); op.add(at(box(.3, .85, .3, M.dark), 0, .43, 0)); P(op, 0, 0, cz + 1.5, 2.0, .8);
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(.55, .7, .25, 20), M.steel); P(lamp, 0, 2.55, cz + 1.5); P(new THREE.Mesh(new THREE.CircleGeometry(.5, 20), new THREE.MeshBasicMaterial({ color: 0xffffff })), 0, 2.42, cz + 1.5).rotation.x = Math.PI / 2;
+    for (const x of [-2.5, -1.2, 1.2, 2.5]) P(box(1.1, 2.0, .45, M.white), x, 1.0, z1 - .3, 1.1, .45);
+    const cross = new THREE.Group(); cross.add(box(.7, .2, .02, M.red)); cross.add(box(.2, .7, .02, M.red)); cross.rotation.y = Math.PI; P(cross, 0, 2.3, z1 - .55);
+  }
+  if (t === "B3") { // garden: long planter rows under purple grow lights, a water tank, small trees
+    const leaf = std({ color: 0x4f8f3a, roughness: .8 }), leaf2 = std({ color: 0x6aa84f, roughness: .8 }), soil = std({ color: 0x2a2016, roughness: 1 });
+    for (const x of [-3.8, -1.3, 1.3, 3.8]) {
+      const len = 9; P(box(1.0, .45, len, M.wood), x, .22, cz - .5, 1.0, len); P(box(.9, .05, len - .1, soil), x, .46, cz - .5);
+      for (let k = 0; k < 14; k++) { const r = rnd(.12, .22), s = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), k % 2 ? leaf : leaf2); P(s, x + rnd(-.3, .3), .5 + r * .8, cz - .5 - len / 2 + .4 + k * (len - .8) / 13); }
+      const grow = box(.2, .05, len, new THREE.MeshBasicMaterial({ color: 0xd36bff })); P(grow, x, 2.4, cz - .5);
+    }
+    const tank = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 2.2, 24), std({ color: 0x3a6b8f, roughness: .4, metalness: .3 })); P(tank, AW - 1.3, 1.1, z1 - 1.4, 1.8, 1.8);
+    for (const x of [-AW + 1, -AW + 2.6]) { const tr = new THREE.Group(); tr.add(at(new THREE.Mesh(new THREE.CylinderGeometry(.08, .12, 1.4, 8), M.wood), 0, .7, 0)); tr.add(at(new THREE.Mesh(new THREE.SphereGeometry(.7, 12, 10), leaf), 0, 1.7, 0)); tr.add(at(box(.7, .5, .7, M.wood), 0, .25, 0)); P(tr, x, 0, z1 - 1.2, .8, .8); }
+  }
+  if (t === "B4") { // mess hall: long tables and benches, a serving counter, pantry shelves
+    for (const x of [-3.3, 0, 3.3]) for (const z of [z0 + 4, z0 + 8.5]) {
+      P(box(1.0, .07, 3.4, M.wood), x, .76, z, 1.9, 3.4); for (const dz of [-1.4, 1.4]) P(box(.1, .72, .1, M.wood), x, .36, z + dz);
+      for (const dx of [-.75, .75]) P(box(.3, .44, 3.2, M.wood), x + dx, .22, z);
+      for (let k = 0; k < 3; k++) P(new THREE.Mesh(new THREE.CylinderGeometry(.09, .09, .12, 10), M.steel), x + rnd(-.2, .2), .86, z - 1 + k);
+    }
+    P(box(7, 1.0, .8, M.steel), 0, .5, z1 - 2.6, 7, .8); P(box(7, .06, .9, M.dark), 0, 1.03, z1 - 2.6);
+    for (let k = 0; k < 5; k++) P(new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .25, 14), M.steel), -2.8 + k * 1.4, 1.18, z1 - 2.6);
+    for (const x of [-AW + .3, AW - .3]) for (let k = 0; k < 4; k++) { const z = z0 + 2.5 + k * 2.8, sh = new THREE.Group(); for (const y of [.4, 1.0, 1.6, 2.2]) { sh.add(at(box(.5, .05, 2.2, M.wood), 0, y, 0)); for (let q = 0; q < 6; q++) sh.add(at(box(.3, .3, .28, q % 2 ? M.olive : std({ color: 0xa8743a })), 0, y + .18, -.9 + q * .36)); } P(sh, x, 0, z, .55, 2.2); }
+  }
+  if (t === "B5") { // dormitory: rows and rows of bunks with lockers
+    for (const x of [-4.3, -1.7, 1.7, 4.3]) for (let k = 0; k < 4; k++) { const z = z0 + 2.6 + k * 3; bunk(x, z); locker(x + (x < 0 ? .8 : -.8), z + .6, 0); }
+  }
+  if (t === "B6") { // armory: equipment racks (everything stays racked), gear lockers, a briefing table
+    const rack = (x, z, rot) => { const r = new THREE.Group(); r.add(at(box(.3, 2.2, 3.0, M.dark), 0, 1.1, 0)); for (let k = -5; k <= 5; k++) { r.add(at(box(.07, 1.1, .07, M.steel), .2, 1.25, k * .26)); r.add(at(box(.12, .25, .1, M.dark), .2, .65, k * .26)); } r.add(at(box(.35, .08, 3.0, M.steel), .1, .5, 0)); r.add(at(box(.35, .08, 3.0, M.steel), .1, 1.85, 0)); r.rotation.y = rot; return P(r, x, 0, z, rot ? 3.0 : .5, rot ? .5 : 3.0); };
+    for (const z of [z0 + 3, z0 + 7, z0 + 11]) { rack(-AW + .3, z, 0); rack(AW - .3, z, Math.PI); }
+    for (let k = 0; k < 6; k++) locker(-2.2 + k * .6, z1 - .35, 0);
+    for (let k = 0; k < 5; k++) { const helmet = new THREE.Mesh(new THREE.SphereGeometry(.16, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.olive); P(helmet, -2.2 + k * .9 + .3, 2.05, z1 - .35); }
+    const table = new THREE.Group(); table.add(at(box(2.6, .1, 1.6, M.wood), 0, .9, 0)); table.add(at(box(2.2, .85, 1.2, M.dark), 0, .43, 0));
+    const map = plane(2.4, 1.4, new THREE.MeshBasicMaterial({ map: label("HATCH WATCH · B8", { w: 512, h: 300, size: 46, fg: "#ffc23a", bg: "#1d2a1a" }) })); map.rotation.set(-Math.PI / 2, 0, Math.PI); table.add(at(map, 0, .96, 0));
+    P(table, 0, 0, cz, 2.6, 1.6);
+    for (const [x, z] of [[-1.5, cz + 4], [1.6, cz + 4.3], [1.2, z0 + 2.4]]) crate(x, z, .75);
+  }
+  if (t === "B7") { // engineering: generators, a turbine, pipes, control panels with blinking lights
+    for (const x of [-3.6, 3.6]) for (const z of [z0 + 4, z0 + 9]) { const gen = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 2.8, 22), M.steel); gen.rotation.x = Math.PI / 2; P(gen, x, 1.0, z, 2.0, 3.0); P(box(2.2, .02, 3.2, M.hazard), x, .015, z); P(box(.4, 1.6, .4, M.dark), x, .8, z + 1.7); }
+    const turb = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 2.6, 28), std({ color: 0x8a6a3a, roughness: .4, metalness: .7 })); P(turb, 0, 1.3, z1 - 2.4, 2.8, 2.8);
+    for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, AD, 10), M.pipe); p.rotation.x = Math.PI / 2; P(p, -AW + .3, .6 + k * .45, cz); const p2 = p.clone(); P(p2, AW - .3, .6 + k * .45, cz); }
+    const panel = box(3.2, 1.2, .3, M.dark); P(panel, 0, .9, z0 + 2.2, 3.2, .4);
+    out.blink = []; for (let k = 0; k < 12; k++) { const l = new THREE.Mesh(new THREE.CircleGeometry(.05, 10), new THREE.MeshBasicMaterial({ color: [0xff3b3b, 0x9cf04a, 0xffc23a][k % 3] })); l.rotation.y = Math.PI; P(l, -1.3 + (k % 6) * .5, .95 + Math.floor(k / 6) * .3, z0 + 2.04); out.blink.push(l); }
+    const warn = new THREE.PointLight(0xff7a20, 0, 8, 1.4); P(warn, 0, 2.8, z1 - 2.4); out.warn = warn;
+  }
+  out.walk.push({ x0: -AW + .3, x1: AW - .3, z0: z0 - .1, z1: z1 - .3 });
+  out.areaEntry = { x: 0, z: z0 + 1.2, yaw: Math.PI };
 }
 function buildFloor(i) {
   if (floors[i]) return floors[i];
@@ -226,15 +299,7 @@ function buildFloor(i) {
     out.blast = blast; out.blastZ = z1; out.spawnZ = z2 - 1.6;
     out.walk.push({ x0: -1.6, x1: 1.6, z0: CEND - .1, z1: z1 - .25 }, { x0: -1.6, x1: 1.6, z0: z1 + .25, z1: z2 - .05 });
     out.gate = { x0: -1.0, x1: 1.0, z0: z1 - .5, z1: z1 + .5 };
-  } else {
-    const cz = CEND + 3.2, z2 = CEND + 6.4;
-    room(g, -3.6, 3.6, CEND, z2, tint);
-    wallX(g, -3.6, CEND, z2, 1); wallX(g, 3.6, CEND, z2, -1); wallZ(g, z2, -3.6, 3.6, -1);
-    wallZ(g, CEND, 1.8, 3.6, 1); wallZ(g, CEND, -3.6, -1.8, 1);
-    theme(g, i, cz);
-    g.add(at(new THREE.PointLight(tint, 4, 9, 1.4), 0, 2.6, cz));
-    out.walk.push({ x0: -3.3, x1: 3.3, z0: CEND - .1, z1: z2 - .05 });
-  }
+  } else mainArea(g, i, out);
   if (myZ !== null) { out.room = yourRoom(g, myZ); decorate(out.room); out.roomWalk = { x0: -5.15, x1: -1.7, z0: myZ - 1.45, z1: myZ + 1.45 }; out.doorGap = { x0: -2.3, x1: -1.3, z0: myZ - .5, z1: myZ + .5 }; }
   floors[i] = out; return out;
 }
@@ -392,7 +457,8 @@ function areas() {
   return a.filter(r => !r.need || r.need());
 }
 const inRect = (x, z, r) => x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1;
-function ok(x, z, list) { // the body (a small square) must be covered by open areas
+function ok(x, z, list) { // the body must be inside open areas and clear of furniture
+  if (F.blocks) for (const b of F.blocks) if (x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R) return false;
   for (const [dx, dz] of [[0, 0], [R, 0], [-R, 0], [0, R], [0, -R], [R * .7, R * .7], [-R * .7, R * .7], [R * .7, -R * .7], [-R * .7, -R * .7]]) if (!list.some(r => inRect(x + dx, z + dz, r))) return false;
   return true;
 }
@@ -498,7 +564,6 @@ function frame(now) {
     F.mine.leaf.rotation.y = S.myDoor * 1.7;
   }
   $("roomBar").classList.toggle("on", S.inRoom && !ED.open);
-  $("tRoom").hidden = MINE < 0 || S.inRoom; $("tLift").hidden = S.inLift; $("tDoor").hidden = S.lvl === 0 && S.z > F.blastZ - 6;
   if (S.inRoom && !S.roomFirst) { S.roomFirst = 1; ev("walk-room"); tone(523, .3, "sine", .12); tone(784, .5, "sine", .1, .18); }
   const gl = started ? goal() : null;
   if (gl) {
@@ -509,6 +574,7 @@ function frame(now) {
   } else $("guide").classList.remove("on");
   if (ED.open && ED.cam) { const c = ED.cam, k = Math.min(1, dt * 5); c.t += dt; if (c.t < 1.2) { S.x += (c.x - S.x) * k; S.z += (c.z - S.z) * k; let dy = c.yaw - S.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); S.yaw += dy * k; S.pitch += (c.pitch - S.pitch) * k; } }
   const off = ED.open ? innerHeight * .26 : 0; if (off !== (cam.view && cam.view.enabled ? cam.view.offsetY : 0)) { if (off) cam.setViewOffset(innerWidth, innerHeight, 0, off, innerWidth, innerHeight); else cam.clearViewOffset(); }
+  if (F.blink) F.blink.forEach((l, k) => { l.visible = Math.sin(now / (180 + k * 37) + k) > -.2; }); if (F.warn) F.warn.intensity = Math.max(0, Math.sin(now / 300)) * 4;
   const bob = moving ? Math.sin(now / 110) * .03 : 0, shake = S.riding && S.liftDoor <= .001 ? Math.sin(now / 25) * .004 : 0;
   cam.position.set(S.x + shake, 1.62 + bob, S.z);
   cam.rotation.set(S.pitch, S.yaw, 0);
@@ -530,17 +596,28 @@ $("start").disabled = false; $("start").textContent = "▶ ENTER";
 // ---------- quick travel ----------
 let travelling = false;
 function travel(dest) {
-  if (travelling || S.riding) return; travelling = true;
+  if (travelling || S.riding) return; travelling = true; $("travelMenu").classList.remove("on");
+  if (ED.open) closeEd();
   $("fade").classList.add("on"); tone(520, .18, "triangle", .08); tone(780, .22, "triangle", .06, .08);
   setTimeout(() => {
     if (dest === "room" && MINE >= 0) { showFloor(MINE); S.myDoor = 1; S.x = -3.0; S.z = F.myZ - .2; S.yaw = Math.PI / 2 + .25; S.pitch = -.12; }
     else if (dest === "lift") { S.x = 0; S.z = ELZ - 1.3; S.yaw = Math.PI; S.pitch = 0; S.liftDoor = 1; }
     else if (dest === "door") { showFloor(0); S.blastOpen = 1; S.x = 0; S.z = F.blastZ - 2.2; S.yaw = 0; S.pitch = 0; }
+    else if (dest.startsWith("area")) { const i = +dest.slice(4); showFloor(i); const e = F.areaEntry; S.x = e.x; S.z = e.z; S.yaw = e.yaw; S.pitch = 0; }
     ev("walk-travel-" + dest);
     setTimeout(() => { $("fade").classList.remove("on"); travelling = false; }, 60);
   }, 260);
 }
-$("tRoom").hidden = MINE < 0;
-$("tRoom").onclick = () => travel("room"); $("tLift").onclick = () => travel("lift"); $("tDoor").onclick = () => travel("door");
+{
+  const nice = t => t.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase());
+  const places = [];
+  if (MINE >= 0) places.push(["room", "My room", `Bed ${fmt(bed)} · ${LEVELS[MINE][0]}`]);
+  places.push(["lift", "The lift", "Pick any floor"], ["door", "Entrance", "B1 · the blast door"]);
+  LEVELS.forEach((Lv, i) => { if (AREAS[Lv[0]]) places.push(["area" + i, nice(AREAS[Lv[0]]), Lv[0] + " · " + Lv[1]]); });
+  $("travelList").innerHTML = places.map(([k, n, d]) => `<button type="button" data-go="${k}"><b>${n}</b><small>${d}</small></button>`).join("");
+  $("travelList").onclick = e => { const b = e.target.closest("[data-go]"); if (b) travel(b.dataset.go); };
+  $("travelBtn").onclick = () => $("travelMenu").classList.toggle("on");
+  $("travelClose").onclick = () => $("travelMenu").classList.remove("on");
+}
 if (qs.get("at") === "room" && MINE >= 0) { $("ctitle").innerHTML = `YOUR<br><b>ROOM</b>`; $("csub").textContent = `Bed ${fmt(bed)} on ${LEVELS[MINE][0]}. Walk out to explore the bunker. Sound on.`; }
 window.__bk = { S, start, ride, tp: (lvl, x, z, yaw) => { showFloor(lvl); S.x = x; S.z = z; if (yaw != null) S.yaw = yaw; }, get F() { return F; } };
