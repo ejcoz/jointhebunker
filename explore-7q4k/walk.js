@@ -419,6 +419,7 @@ function frame(now) {
     F.mine.leaf.rotation.y = S.myDoor * 1.7;
   }
   $("roomBar").classList.toggle("on", S.inRoom);
+  $("tRoom").hidden = MINE < 0 || S.inRoom; $("tLift").hidden = S.inLift; $("tDoor").hidden = S.lvl === 0 && S.z > F.blastZ - 6;
   if (S.inRoom && !S.roomFirst) { S.roomFirst = 1; ev("walk-room"); tone(523, .3, "sine", .12); tone(784, .5, "sine", .1, .18); }
   const gl = started ? goal() : null;
   if (gl) {
@@ -437,10 +438,28 @@ requestAnimationFrame(frame);
 
 function start() {
   if (!ac) audioOn(); if (ac && ac.state === "suspended") ac.resume();
-  $("cover").classList.add("off"); started = true; document.body.classList.add("playing"); ev("walk-start");
+  $("cover").classList.add("off"); started = true; document.body.classList.add("playing");
+  if (qs.get("at") === "room" && MINE >= 0 && !S.startedOnce) { showFloor(MINE); S.myDoor = 1; S.x = -3.0; S.z = F.myZ - .2; S.yaw = Math.PI / 2 + .25; S.pitch = -.12; }
+  S.startedOnce = true; ev("walk-start");
   setTimeout(() => $("hint").classList.add("on"), 600); setTimeout(() => $("hint").classList.remove("on"), 7000);
 }
 $("start").onclick = start;
 $("roomGo").href = roomUrl;
 $("start").disabled = false; $("start").textContent = "▶ ENTER";
+// ---------- quick travel ----------
+let travelling = false;
+function travel(dest) {
+  if (travelling || S.riding) return; travelling = true;
+  $("fade").classList.add("on"); tone(520, .18, "triangle", .08); tone(780, .22, "triangle", .06, .08);
+  setTimeout(() => {
+    if (dest === "room" && MINE >= 0) { showFloor(MINE); S.myDoor = 1; S.x = -3.0; S.z = F.myZ - .2; S.yaw = Math.PI / 2 + .25; S.pitch = -.12; }
+    else if (dest === "lift") { S.x = 0; S.z = ELZ - 1.3; S.yaw = Math.PI; S.pitch = 0; S.liftDoor = 1; }
+    else if (dest === "door") { showFloor(0); S.blastOpen = 1; S.x = 0; S.z = F.blastZ - 2.2; S.yaw = 0; S.pitch = 0; }
+    ev("walk-travel-" + dest);
+    setTimeout(() => { $("fade").classList.remove("on"); travelling = false; }, 60);
+  }, 260);
+}
+$("tRoom").hidden = MINE < 0;
+$("tRoom").onclick = () => travel("room"); $("tLift").onclick = () => travel("lift"); $("tDoor").onclick = () => travel("door");
+if (qs.get("at") === "room" && MINE >= 0) { $("ctitle").innerHTML = `YOUR<br><b>ROOM</b>`; $("csub").textContent = `Bed ${fmt(bed)} on ${LEVELS[MINE][0]}. Walk out to explore the bunker. Sound on.`; }
 window.__bk = { S, start, ride, tp: (lvl, x, z, yaw) => { showFloor(lvl); S.x = x; S.z = z; if (yaw != null) S.yaw = yaw; }, get F() { return F; } };

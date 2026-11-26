@@ -38,6 +38,15 @@ body.inroom #joy{bottom:calc(122px + env(safe-area-inset-bottom))}
 #liftBtns button.cur{border-color:var(--gold);color:var(--gold)}
 .go{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:0 24px;border-radius:14px;border:0;background:var(--gold);color:#15100a;font:400 20px Anton,sans-serif;letter-spacing:1px;text-decoration:none;cursor:pointer;box-shadow:0 8px 28px #ffc23a44}
 .go:disabled{opacity:.6}
+#travel{position:fixed;z-index:5;right:calc(16px + env(safe-area-inset-right));bottom:calc(46px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;opacity:0;pointer-events:none;transition:bottom .3s cubic-bezier(.2,.8,.2,1),opacity .3s}
+body.playing #travel{opacity:1;pointer-events:auto}
+body.lift #travel{bottom:calc(214px + env(safe-area-inset-bottom))}
+body.inroom #travel{bottom:calc(122px + env(safe-area-inset-bottom))}
+#travel button{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 10px;border-radius:999px;border:2px solid #4a3a22;background:rgba(11,7,5,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);font:700 13px Inter,sans-serif;cursor:pointer}
+#travel button svg{width:20px;height:20px;fill:none;stroke:var(--gold);stroke-width:2}
+#travel button[hidden]{display:none}
+#fade{position:fixed;inset:0;z-index:7;background:#000;opacity:0;pointer-events:none;transition:opacity .25s}
+#fade.on{opacity:1}
 .cover{position:fixed;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(80% 60% at 50% 40%,#2a1f12,#000);text-align:center;padding:24px;transition:opacity .5s}
 .cover.off{opacity:0;pointer-events:none}
 .cover h1{margin:0;font:400 44px Anton,sans-serif;letter-spacing:.02em;line-height:1}
@@ -52,6 +61,12 @@ body.inroom #joy{bottom:calc(122px + env(safe-area-inset-bottom))}
 <div id="guide" class="chip"><svg id="garrow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l7 18-7-4-7 4z"/></svg><span id="gtext"></span></div>
 <div class="hint" id="hint"><span>Push the stick to walk</span><span>Drag here to look around</span></div>
 <div id="joy"><div id="knob"></div></div>
+<div id="travel" aria-label="Quick travel">
+  <button type="button" id="tRoom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M2 21h20M14 12h.01"/></svg>My room</button>
+  <button type="button" id="tLift"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 9l3-3 3 3M9 15l3 3 3-3"/></svg>Lift</button>
+  <button type="button" id="tDoor"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>Entrance</button>
+</div>
+<div id="fade"></div>
 <div class="sheet" id="liftPanel"><div class="k">LIFT · PICK A FLOOR</div><div id="liftBtns"></div></div>
 <div class="sheet" id="roomBar"><div class="k">YOUR ROOM</div><a class="go" id="roomGo" href="/room/">DECORATE MY ROOM <span>→</span></a></div>
 <div class="cover" id="cover">
