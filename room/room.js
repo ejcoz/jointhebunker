@@ -46,6 +46,29 @@ try {
   }
 } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+// ---------- room link: the whole room packed into a link, so it can come back in any browser ----------
+const b64e = t => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64d = t => decodeURIComponent(escape(atob(t.replace(/-/g, "+").replace(/_/g, "/"))));
+const sum = t => (hash("bnkr:" + handle + ":" + t) >>> 0).toString(36).slice(0, 5);
+const packRoom = () => { const d = b64e(JSON.stringify({ v: 1, c: st.coins, o: st.own, e: st.eq, b: st.best, x: st.earned, t: st.coat })); return d + "." + sum(d); };
+const unpackRoom = code => {
+  try {
+    const [d, k] = String(code).split("."); if (!d || k !== sum(d)) return null;
+    const r = JSON.parse(b64d(d)); if (!r || r.v !== 1 || typeof r.c !== "number" || r.c < 0) return null;
+    const own = (r.o || []).filter(x => BY[x]), eq = {};
+    for (const [sl, id] of Object.entries(r.e || {})) if (BY[id] && own.includes(id)) eq[sl] = id;
+    return { coins: Math.floor(r.c), own, eq, best: r.b || {}, earned: Math.max(r.x || 0, r.c), coat: r.t ?? null };
+  } catch (e) { return null; }
+};
+const roomLink = () => location.origin + location.pathname + "#h=" + encodeURIComponent(handle) + "&b=" + bed + "&s=" + packRoom();
+let pending = qs.get("s") ? unpackRoom(qs.get("s")) : null;
+if (qs.get("s")) { try { history.replaceState(null, "", location.pathname + "#h=" + encodeURIComponent(handle) + "&b=" + bed + (qs.get("test") === "1" ? "&test=1" : "")); } catch (e) {} }
+if (pending) {
+  const same = pending.coins === st.coins && pending.own.length === st.own.length;
+  const empty = !st.own.length && !st.earned;
+  if (same) pending = null;
+  else if (empty) { st = { ...st, ...pending }; save(); pending = null; }
+}
 const TEST = qs.get("test") === "1";
 let pet = PETS[handle] || null;
 if (TEST && st.testPet !== undefined) pet = st.testPet;
@@ -193,7 +216,23 @@ ${pet ? mate : PETASK}
 <div id="coats"></div>
 <p>${petLine} ${JOB[lvl]}</p>
 <div class="hint" id="hint"><b>How it works</b><ol><li><b>Play</b> a game to earn coins.</li><li>Open the <b>Catalogue</b> and tap anything to try it on.</li><li>Buy it. It stays in your room.</li></ol><button id="hintX" type="button" aria-label="Got it">Got it</button></div>
-<p class="fine">Coins are earned, never bought. Your room is saved on this phone for now.</p>`;
+<div class="savebox"><b>KEEP YOUR ROOM SAFE</b><p>Your room lives in this browser. Save your room link and it comes back anywhere: Safari, Chrome, a new phone.</p><button class="mini go" id="saveBtn" type="button">Save my room</button><div id="saveOut" hidden><input id="saveLink" readonly><p id="saveMsg"></p></div></div>
+<p class="fine">Coins are earned, never bought.</p>`;
+if (pending) {
+  const bar = document.createElement("div"); bar.className = "restore";
+  bar.innerHTML = `<b>SAVED ROOM FOUND</b><p>${fmt(pending.coins)} coins · ${pending.own.length} item${pending.own.length === 1 ? "" : "s"}. This browser has ${fmt(st.coins)} coins · ${st.own.length}.</p><div class="row"><button class="mini go" id="rsYes" type="button">Restore saved room</button><button class="mini" id="rsNo" type="button">Keep this one</button></div>`;
+  app.prepend(bar);
+  $("rsYes").onclick = () => { st = { ...st, ...pending }; save(); ev("room-restore"); location.reload(); };
+  $("rsNo").onclick = () => bar.remove();
+}
+$("saveBtn").onclick = async () => {
+  const url = roomLink(); $("saveLink").value = url; $("saveOut").hidden = false;
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch (e) {}
+  if (!ok) { try { $("saveLink").select(); ok = document.execCommand("copy"); } catch (e) {} }
+  $("saveMsg").textContent = ok ? "Copied. Paste it in your Notes. Open it any time to get this room back. Save a new link after you buy something." : "Press and hold the link to copy it. Paste it in your Notes. Save a new link after you buy something.";
+  ev("room-save-link");
+};
 function games() {
   $("pgrid").innerHTML = GAMES.map(g => `<button class="gm" data-g="${g.id}" type="button" style="--c:${g.col}"><b>${g.n}</b><span>${g.d}</span><em>${st.best[g.id] ? "Best: " + st.best[g.id] + " coins" : "Not played yet"}</em></button>`).join("");
 }
