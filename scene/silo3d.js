@@ -82,7 +82,7 @@ function start(renderer) {
     const lip = new THREE.Mesh(new THREE.BoxGeometry(2 * R, .07, .05), lipMat); lip.position.set(0, floorY + .025, -.0); scene.add(lip);
     const idx = [];
     for (let r = 0; r < ROWS; r++) for (let j = 0; j < PER; j++) {
-      const skip = id === "B3" || (id === "B7" && j > 7) || (id === "B4" && r === 1);
+      const skip = id === "B3" || (id !== "B5" && r === 0) || (id === "B7" && j > 9);
       const a = Math.PI / 2 + .22 + (j / (PER - 1)) * (Math.PI - .44);
       const rad = R - .06, x = rad * Math.sin(a), z = rad * Math.cos(a), y = floorY + .09 + r * .13;
       q.setFromAxisAngle(up, a + Math.PI);
@@ -101,23 +101,66 @@ function start(renderer) {
   // the top cap of B1 (roof slab) and a hint of each floor's character
   { const roof = new THREE.Mesh(new THREE.CylinderGeometry(R, R, .06, 48, 1, false, half.thetaStart, half.thetaLength), slabMat); roof.position.y = TOP + .03; scene.add(roof); }
   const L = id => LVL[IDS.indexOf(id)];
-  // B3 garden: planters, leaves, pink grow-lights
-  { const f = L("B3").floorY; const box = new THREE.MeshStandardMaterial({ color: 0x4a3a22, roughness: .9 });
-    const leaf = [0x5fb036, 0x86cc45, 0x3f8a2a].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: .8 }));
+  const b2led = new THREE.Mesh(new THREE.SphereGeometry(.022, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3b3b })); scene.add(b2led);
+  const hz = canvasTex(512, 32, (g, w, h) => { g.fillStyle = "#f2c230"; g.fillRect(0, 0, w, h); g.fillStyle = "#15100a"; for (let x = -32; x < w + 32; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 16, 0); g.lineTo(x, h); g.lineTo(x - 16, h); g.fill(); } });
+  hz.wrapS = THREE.RepeatWrapping; hz.repeat.set(4, 1);
+  // ---- what each floor is for (props sit in front of the bunks, signs on the back wall) ----
+  const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .8, ...o });
+  const add = (geo, mat, x, y, z, ry = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; scene.add(m); return m; };
+  const sign = (id, txt, col, bg = "#15120c") => { const f = L(id).floorY;
+    const tx = canvasTex(256, 64, (g, w, h) => { g.fillStyle = bg; g.fillRect(0, 0, w, h); g.strokeStyle = col; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.font = "38px Anton, Impact, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = col; g.fillText(txt, w / 2, h / 2 + 2); });
+    const ang = Math.PI - .34, m = new THREE.Mesh(new THREE.PlaneGeometry(.34, .085), new THREE.MeshBasicMaterial({ map: tx, fog: false })); const lv = IDS.indexOf(id); m.position.set(.86 * Math.sin(ang), f + .34 - lv * .028, .86 * Math.cos(ang)); m.rotation.y = ang + Math.PI; scene.add(m); };
+  // B1 entry and decontamination: shower stalls, a yellow decon line, plastic sheeting, the airlock
+  { const f = L("B1").floorY, pipe = M(0x9a9a8c, { metalness: .5 }), water = new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: .35 });
+    for (let n = 0; n < 3; n++) { const x = -.62 + n * .2; add(new THREE.CylinderGeometry(.008, .008, .3, 6), pipe, x, f + .17, -.62); add(new THREE.CylinderGeometry(.03, .02, .02, 10), pipe, x, f + .31, -.58); add(new THREE.ConeGeometry(.045, .26, 10, 1, true), water, x, f + .17, -.58); }
+    add(new THREE.BoxGeometry(.9, .006, .05), new THREE.MeshBasicMaterial({ map: hz }), -.1, f + .056, -.3);
+    const sheet = new THREE.MeshStandardMaterial({ color: 0xcfe6ff, transparent: true, opacity: .28, side: THREE.DoubleSide, roughness: .3 });
+    for (const x of [.18, .36]) add(new THREE.PlaneGeometry(.16, .3), sheet, x, f + .2, -.42, .2);
+    sign("B1", "DECON", "#f2c230"); }
+  // B2 command and medical: med beds with white sheets, a red cross, the radio desk
+  { const f = L("B2").floorY, white = M(0xe8e4d8), frame = M(0x6c6855, { metalness: .4 });
+    for (const x of [-.6, -.36]) { add(new THREE.BoxGeometry(.18, .02, .08), white, x, f + .11, -.5); add(new THREE.BoxGeometry(.18, .01, .08), frame, x, f + .095, -.5); for (const dx of [-.08, .08]) add(new THREE.BoxGeometry(.012, .05, .07), frame, x + dx, f + .075, -.5); add(new THREE.BoxGeometry(.05, .02, .07), white, x - .06, f + .13, -.5); }
+    const cross = canvasTex(64, 64, (g, w, h) => { g.fillStyle = "#f4f0e6"; g.fillRect(0, 0, w, h); g.fillStyle = "#e0312b"; g.fillRect(24, 8, 16, 48); g.fillRect(8, 24, 48, 16); });
+    add(new THREE.PlaneGeometry(.1, .1), new THREE.MeshBasicMaterial({ map: cross, fog: false }), -.48, f + .32, -.93);
+    add(new THREE.BoxGeometry(.2, .08, .08), M(0x2a2a22), .55, f + .09, -.62);
+    add(new THREE.PlaneGeometry(.12, .05), new THREE.MeshBasicMaterial({ color: 0x5cff7a }), .55, f + .12, -.578);
+    b2led.position.set(.66, f + .15, -.58);
+    sign("B2", "MED · RADIO", "#ff5a4a"); }
+  // B3 the garden: planters, leaves, pink grow-lights
+  { const f = L("B3").floorY; const box = M(0x4a3a22, { roughness: .9 });
+    const leaf = [0x5fb036, 0x86cc45, 0x3f8a2a].map(c => M(c));
     for (let j = 0; j < 9; j++) { const a = Math.PI / 2 + .3 + j / 8 * (Math.PI - .6), x = .82 * Math.sin(a), z = .82 * Math.cos(a);
-      const p = new THREE.Mesh(new THREE.BoxGeometry(.16, .06, .1), box); p.position.set(x, f + .08, z); p.rotation.y = a; scene.add(p);
-      for (let n = 0; n < 3; n++) { const s = new THREE.Mesh(new THREE.SphereGeometry(.045 + (n % 2) * .015, 8, 6), leaf[(j + n) % 3]); s.position.set(x + (n - 1) * .045, f + .15 + (n % 2) * .04, z); scene.add(s); } }
-    const pink = new THREE.PointLight(0xff6ad0, .55, .9, 2); pink.position.set(0, f + .3, -.55); scene.add(pink); }
-  // B6 armory: crates and racks
-  { const f = L("B6").floorY; const crate = new THREE.MeshStandardMaterial({ color: 0x4f5a33, roughness: .9 });
-    for (const [x, z, s] of [[-.55, -.35, .12], [-.42, -.42, .1], [-.5, -.3, .09], [.5, -.4, .12], [.62, -.25, .1]]) { const c = new THREE.Mesh(new THREE.BoxGeometry(s, s * .8, s), crate); c.position.set(x, f + .05 + s * .4, z); scene.add(c); } }
-  // B7 engineering: generators and an orange glow
-  { const f = L("B7").floorY; const gen = new THREE.MeshStandardMaterial({ color: 0x4b4636, roughness: .7, metalness: .3 });
-    for (const x of [.35, .58]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(.09, .09, .26, 16), gen); c.rotation.z = Math.PI / 2; c.position.set(x, f + .14, -.5); scene.add(c); }
-    const o = new THREE.PointLight(0xff8a2a, 1.4, 1.6, 2); o.position.set(.45, f + .25, -.25); scene.add(o); }
-  // B2: a blinking red light by the radio
-  const b2led = new THREE.Mesh(new THREE.SphereGeometry(.025, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3b3b }));
-  { const f = L("B2").floorY; b2led.position.set(.7, f + .28, -.6); scene.add(b2led); }
+      add(new THREE.BoxGeometry(.16, .06, .1), box, x, f + .08, z, a);
+      for (let n = 0; n < 3; n++) add(new THREE.SphereGeometry(.045 + (n % 2) * .015, 8, 6), leaf[(j + n) % 3], x + (n - 1) * .045, f + .15 + (n % 2) * .04, z); }
+    for (const x of [-.4, 0, .4]) add(new THREE.BoxGeometry(.22, .012, .03), new THREE.MeshBasicMaterial({ color: 0xff7ad8 }), x, f + .39, -.45);
+    const pink = new THREE.PointLight(0xff6ad0, .5, .55, 2); pink.position.set(0, f + .2, -.5); scene.add(pink);
+    sign("B3", "GARDEN", "#9cf04a"); }
+  // B4 commons and pantry: mess tables and benches, shelves of tins
+  { const f = L("B4").floorY, wood = M(0x6a4a2a), tin = [0xc0392b, 0xd8b04a, 0x5d8aa8, 0x8a8a7a].map(c => M(c, { metalness: .5, roughness: .4 }));
+    for (const x of [-.45, .05]) { add(new THREE.BoxGeometry(.34, .015, .1), wood, x, f + .1, -.4); for (const dz of [-.08, .08]) add(new THREE.BoxGeometry(.32, .01, .03), wood, x, f + .07, -.4 + dz); for (const dx of [-.15, .15]) add(new THREE.BoxGeometry(.012, .05, .08), wood, x + dx, f + .075, -.4); }
+    add(new THREE.BoxGeometry(.26, .24, .07), M(0x3a3226), .64, f + .17, -.62);
+    for (let r = 0; r < 3; r++) for (let n = 0; n < 6; n++) add(new THREE.CylinderGeometry(.016, .016, .04, 8), tin[(r + n) % 4], .54 + n * .04, f + .08 + r * .075, -.58);
+    sign("B4", "MESS · PANTRY", "#f2c230"); }
+  // B5 main dormitory: extra bunk blocks down the aisle
+  { const f = L("B5").floorY, frame = M(0x2e3625), mat = M(0x0d0e0b);
+    for (const x of [-.52, -.14, .6]) { add(new THREE.BoxGeometry(.22, .2, .1), frame, x, f + .15, -.38); for (const y of [.09, .18]) add(new THREE.BoxGeometry(.2, .012, .105), new THREE.MeshBasicMaterial({ color: 0x9cf04a }), x, f + y, -.33); }
+    sign("B5", "DORMITORY", "#9cf04a"); }
+  // B6 the armory: rifle racks, crates, a hazard-striped wall, caged lamps
+  { const f = L("B6").floorY, crate = M(0x4f5a33, { roughness: .9 }), rack = M(0x3a3a32, { metalness: .4 }), gun = M(0x1a1a16, { metalness: .5 });
+    for (const x of [-.55, -.25]) { add(new THREE.BoxGeometry(.24, .02, .04), rack, x, f + .26, -.66); add(new THREE.BoxGeometry(.24, .02, .04), rack, x, f + .08, -.66); for (let n = 0; n < 6; n++) add(new THREE.BoxGeometry(.012, .2, .012), gun, x - .1 + n * .04, f + .17, -.64); }
+    for (const [x, z, sz] of [[.3, -.4, .11], [.42, -.45, .09], [.36, -.36, .08], [.6, -.3, .1]]) add(new THREE.BoxGeometry(sz, sz * .8, sz), crate, x, f + .05 + sz * .4, z);
+    add(new THREE.BoxGeometry(.5, .05, .01), new THREE.MeshBasicMaterial({ map: hz }), -.4, f + .36, -.9);
+    sign("B6", "ARMORY", "#f2c230"); }
+  // B7 engineering: generators, a radiation tank, pipes, and the welded hatch in the floor
+  { const f = L("B7").floorY, gen = M(0x4b4636, { roughness: .6, metalness: .4 }), pipe = M(0x7a6a50, { metalness: .5 });
+    for (const x of [.35, .6]) { const c = add(new THREE.CylinderGeometry(.08, .08, .22, 16), gen, x, f + .13, -.55); c.rotation.z = Math.PI / 2; }
+    const tank = add(new THREE.CylinderGeometry(.08, .08, .26, 16), M(0xd8b04a, { metalness: .3 }), -.55, f + .18, -.55);
+    add(new THREE.BoxGeometry(1.2, .02, .02), pipe, 0, f + .36, -.8);
+    const hatchRing = new THREE.Mesh(new THREE.RingGeometry(.09, .14, 28), new THREE.MeshBasicMaterial({ map: hz, side: THREE.DoubleSide })); hatchRing.rotation.x = -Math.PI / 2; hatchRing.position.set(-.05, f + .056, -.3); scene.add(hatchRing);
+    const lid = new THREE.Mesh(new THREE.CircleGeometry(.09, 24), M(0x4e4b3d, { metalness: .5 })); lid.rotation.x = -Math.PI / 2; lid.position.set(-.05, f + .057, -.3); scene.add(lid);
+    const seam = new THREE.Mesh(new THREE.RingGeometry(.088, .096, 28), new THREE.MeshBasicMaterial({ color: 0xff3b1a })); seam.rotation.x = -Math.PI / 2; seam.position.set(-.05, f + .058, -.3); scene.add(seam);
+    const o = new THREE.PointLight(0xff8a2a, 1.2, 1.4, 2); o.position.set(.45, f + .25, -.25); scene.add(o);
+    sign("B7", "ENGINEERING", "#ff8a2a"); }
 
   // ---- the ladder and lift core down the centre ----
   { const core = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, TOP - BOTTOM, 10), new THREE.MeshStandardMaterial({ color: 0x1a1912, roughness: .7, metalness: .2 })); core.position.set(0, (TOP + BOTTOM) / 2, -.15); scene.add(core);
@@ -136,8 +179,6 @@ function start(renderer) {
     door.rotation.z = Math.PI / 2; door.rotation.y = -.35; door.position.set(R + .14, TOP + .12, .12); scene.add(door); }
 
   // ---- hazard-striped footing ----
-  const hz = canvasTex(512, 32, (g, w, h) => { g.fillStyle = "#f2c230"; g.fillRect(0, 0, w, h); g.fillStyle = "#15100a"; for (let x = -32; x < w + 32; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 16, 0); g.lineTo(x, h); g.lineTo(x - 16, h); g.fill(); } });
-  hz.wrapS = THREE.RepeatWrapping; hz.repeat.set(4, 1);
   { const foot = new THREE.Mesh(new THREE.CylinderGeometry(R + .22, R + .22, .1, 48, 1, false, half.thetaStart, half.thetaLength), [new THREE.MeshStandardMaterial({ map: hz }), new THREE.MeshStandardMaterial({ color: 0xf2c230 }), new THREE.MeshStandardMaterial({ color: 0xf2c230 })]);
     foot.position.y = BOTTOM - .05; scene.add(foot);
     const front = new THREE.Mesh(new THREE.BoxGeometry(2 * (R + .22), .1, .02), new THREE.MeshStandardMaterial({ map: hz })); front.position.set(0, BOTTOM - .05, 0); scene.add(front); }
@@ -167,7 +208,7 @@ function start(renderer) {
   function placeCam(t) {
     const sway = Math.sin(t * .18) * .32;
     const a = Math.max(-.85, Math.min(.85, sway + drag));
-    cam.position.set(target.x + Math.sin(a) * DIST, target.y + .55 + Math.sin(t * .23) * .05, target.z + Math.cos(a) * DIST);
+    cam.position.set(target.x + Math.sin(a) * DIST, target.y + .38 + Math.sin(t * .23) * .05, target.z + Math.cos(a) * DIST);
     cam.lookAt(target);
   }
   cv.addEventListener("pointerdown", e => { down = { x: e.clientX, y: e.clientY }; moved = 0; lastX = e.clientX; try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
