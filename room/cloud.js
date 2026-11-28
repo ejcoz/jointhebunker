@@ -6,6 +6,7 @@ const HIDE = new Set(["1.lanaisonesexcassbtc__", "1_sleepynigga", "903coon", "91
 const hidden = h => HIDE.has(h) || /(20(09|1[0-7]))|(\d{2}\s?yo)/.test(h) || /(fuck|shit|nazi|rape|nigg|fag|cunt|dick|cock|porn|sex|hitler|kkk|pedo)/.test(h);
 const j = async (path, opt) => { const r = await fetch(API + path, opt); const b = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(b.error || "error"), { status: r.status }); return b; };
 const post = (path, body) => j(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+window.BK_CLOUD_PUBLIC = true; // cloud save + leaderboards on for everyone (28 Nov)
 window.BK_CLOUD = {
   hidden,
   save: (code, handle, bed, state) => post("/save", { code, handle, bed, state }),
