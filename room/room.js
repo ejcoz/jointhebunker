@@ -396,7 +396,7 @@ function play(id) {
   stop = gm.start({ svg, hud: t => $("ghud").textContent = t, bar: p => $("gflood").style.width = Math.min(100, p) + "%",
     end: (coins, line) => {
       coins = Math.max(0, Math.round(coins)); st.coins += coins; st.earned += coins; coinsVisit += coins; const best = coins > (st.best[id] || 0); if (best) st.best[id] = coins; save(); draw(); games();
-      if (code && CLOUD && coins > 0) CLOUD.score(id, coins, (Date.now() - gT0) / 1000).catch(() => {});
+      if (code && CLOUD && coins > 0) CLOUD.score(code, id, coins, (Date.now() - gT0) / 1000).catch(() => {});
       ev("game-" + id + "-secs-" + gb((Date.now() - gT0) / 1000)); gId = null;
       ev("game-" + id + "-" + (coins < 10 ? "0-9" : coins < 20 ? "10-19" : coins < 40 ? "20-39" : coins < 70 ? "40-69" : "70plus"));
       $("gmsg").innerHTML = `<b>+${coins} COINS</b>${esc(line)}${best && coins ? " New best." : ""}<div class="row"><button class="btn" id="gx" type="button">Back to my room</button><button class="btn go" id="gy" type="button">Again</button></div>`;
