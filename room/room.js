@@ -25,12 +25,28 @@ const bed = parseInt(qs.get("b"), 10);
 const L = LEVELS.find(l => bed >= l[2] && bed <= l[3]);
 window.addEventListener("hashchange", () => location.reload());
 const app = $("app");
+// ---------- cloud save: a recovery code is the only key (no accounts) ----------
+const CLOUD = window.BK_CLOUD;
+const normCode = c => { const t = String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^BUNK/, ""); return t.length === 12 ? "BUNK-" + t.slice(0, 4) + "-" + t.slice(4, 8) + "-" + t.slice(8) : ""; };
+const restoreWith = async raw => {
+  const c = normCode(raw); if (!c) throw new Error("That code doesn't look right.");
+  const r = await CLOUD.load(c), s = r.state || {};
+  try {
+    localStorage.setItem("bunkerRoom:" + r.handle, JSON.stringify(s)); localStorage.setItem("bunkerCode:" + r.handle, c);
+    localStorage.setItem("bunkerHandle", r.handle); localStorage.setItem("bunkerRoomUrl", "/room/#h=" + encodeURIComponent(r.handle) + "&b=" + r.bed);
+  } catch (e) { throw new Error("This browser won't let me save. Turn off private browsing and try again."); }
+  location.replace("/room/#h=" + encodeURIComponent(r.handle) + "&b=" + r.bed); location.reload();
+};
+const restoreMsg = e => e && e.status === 404 ? "No room found for that code." : (e && e.message && !e.status ? e.message : "Couldn't reach the bunker. Try again in a minute.");
 if (!handle || !L) {
   try { const ru = localStorage.getItem("bunkerRoomUrl"); if (ru && ru.includes("#h=")) { location.replace(ru); return; } } catch (e) {}
   document.body.classList.add("nodock");
   app.innerHTML = `<div class="lock"><div class="k">JOIN THE BUNKER</div><h1>OPEN <b>YOUR ROOM</b></h1><p>Type your Instagram username. We'll find your bed and take you inside.</p>
   <form id="go" class="goform"><span>@</span><input id="gu" autocapitalize="none" spellcheck="false" placeholder="yourname" maxlength="40"><button class="btn go" type="submit">Go</button></form>
-  <p class="fine">Not on the manifest yet? Follow @jointhebunker. Doors unlock after every Transmission.</p></div>`;
+  <p class="fine">Not on the manifest yet? Follow @jointhebunker. Doors unlock after every Transmission.</p>
+  <p class="fine"><a href="#" id="rcLink">Have a recovery code?</a></p><form id="rcForm" class="goform" hidden><input id="rcIn" autocapitalize="characters" spellcheck="false" placeholder="BUNK-XXXX-XXXX-XXXX" maxlength="24"><button class="btn go" type="submit">Restore</button></form><p class="fine" id="rcMsg"></p></div>`;
+  $("rcLink").onclick = e => { e.preventDefault(); $("rcForm").hidden = false; $("rcIn").focus(); };
+  $("rcForm").onsubmit = async e => { e.preventDefault(); $("rcMsg").textContent = "Looking..."; try { await restoreWith($("rcIn").value); } catch (err) { $("rcMsg").textContent = restoreMsg(err); } };
   $("go").onsubmit = e => { e.preventDefault(); const u = $("gu").value.trim().replace(/^@+/, ""); if (u) location.href = "/?u=" + encodeURIComponent(u) + "&go=room"; };
   return;
 }
@@ -45,7 +61,10 @@ try {
     st.eq = s.eq || {}; if (s.on) for (const x of s.on) { const id = MIG[x] || x; if (BY[id]) st.eq[BY[id].slot] = id; }
   }
 } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+let code = ""; try { code = localStorage.getItem("bunkerCode:" + handle) || ""; } catch (e) {}
+let syncT = 0;
+const cloudSync = () => { if (!code || !CLOUD) return; clearTimeout(syncT); syncT = setTimeout(() => CLOUD.save(code, handle, bed, st).catch(() => {}), 4000); };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} cloudSync(); };
 // ---------- room link: the whole room packed into a link, so it can come back in any browser ----------
 const b64e = t => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const b64d = t => decodeURIComponent(escape(atob(t.replace(/-/g, "+").replace(/_/g, "/"))));
@@ -217,6 +236,9 @@ ${pet ? mate : PETASK}
 <p>${petLine} ${JOB[lvl]}</p>
 <div class="hint" id="hint"><b>How it works</b><ol><li><b>Play</b> a game to earn coins.</li><li>Open the <b>Catalogue</b> and tap anything to try it on.</li><li>Buy it. It stays in your room.</li></ol><button id="hintX" type="button" aria-label="Got it">Got it</button></div>
 <div class="savebox"><b>KEEP YOUR ROOM SAFE</b><p>Your room lives in this browser. Save your room link and it comes back anywhere: Safari, Chrome, a new phone.</p><button class="mini go" id="saveBtn" type="button">Save my room</button><div id="saveOut" hidden><input id="saveLink" readonly><p id="saveMsg"></p></div></div>
+<div class="savebox" id="cloud"><b>SAVE TO THE CLOUD</b><p id="cloudP"></p><div id="cloudRow"></div><div id="cloudOut" hidden></div>
+<form id="rcForm2" class="rcf"><input id="rcIn2" autocapitalize="characters" spellcheck="false" placeholder="Have a code? BUNK-XXXX-XXXX-XXXX" maxlength="24"><button class="mini" type="submit">Restore</button></form><p id="rcMsg2"></p></div>
+<div class="savebox"><b>LEADERBOARDS</b><p>Top scores in every game, the most coins earned, and floor against floor.</p><button class="mini go" id="boardBtn" type="button">Open leaderboards</button></div>
 <p class="fine">Coins are earned, never bought.</p>`;
 if (pending) {
   const bar = document.createElement("div"); bar.className = "restore";
@@ -232,6 +254,53 @@ $("saveBtn").onclick = async () => {
   if (!ok) { try { $("saveLink").select(); ok = document.execCommand("copy"); } catch (e) {} }
   $("saveMsg").textContent = ok ? "Copied. Paste it in your Notes. Open it any time to get this room back. Save a new link after you buy something." : "Press and hold the link to copy it. Paste it in your Notes. Save a new link after you buy something.";
   ev("room-save-link");
+};
+function renderCloud() {
+  const row = $("cloudRow"), out = $("cloudOut");
+  if (code) {
+    $("cloudP").textContent = "Saved to the cloud. Your room backs up after every game.";
+    row.innerHTML = `<button class="mini" id="cloudShow" type="button">Show my code</button>`;
+    $("cloudShow").onclick = () => showCode();
+  } else {
+    $("cloudP").textContent = "Keep your coins, items and pet on any phone. You get a code. No email, no password.";
+    row.innerHTML = `<button class="mini go" id="cloudSave" type="button">Save to the cloud</button>`;
+    $("cloudSave").onclick = async () => {
+      const b = $("cloudSave"); b.disabled = true; b.textContent = "Saving...";
+      try { const r = await CLOUD.save("", handle, bed, st); code = r.code; try { localStorage.setItem("bunkerCode:" + handle, code); } catch (e) {} ev("cloud-save"); renderCloud(); showCode(true); }
+      catch (e) { b.disabled = false; b.textContent = "Save to the cloud"; $("cloudP").textContent = "Couldn't reach the bunker. Try again in a minute."; }
+    };
+  }
+}
+function showCode(first) {
+  const out = $("cloudOut"); out.hidden = false;
+  out.innerHTML = `<div class="code" id="codeTxt">${esc(code)}</div><p>${first ? "Saved. " : ""}Write this down or keep it in Notes. It is the only way to get your room back on another phone. Don't share it: anyone with it can use your room.</p><button class="mini" id="codeCopy" type="button">Copy code</button>`;
+  $("codeCopy").onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(code); ok = true; } catch (e) {} $("codeCopy").textContent = ok ? "Copied" : "Press and hold the code to copy"; };
+}
+$("rcForm2").onsubmit = async e => { e.preventDefault(); $("rcMsg2").textContent = "Looking..."; try { await restoreWith($("rcIn2").value); } catch (err) { $("rcMsg2").textContent = restoreMsg(err); } };
+renderCloud();
+// ---------- leaderboards ----------
+$("boardBtn").onclick = () => {
+  ev("board-open");
+  let kind = "coins", period = "week", game = GAMES[0].id;
+  const ov = document.createElement("div"); ov.className = "boardov"; document.body.append(ov); document.body.classList.add("gameopen");
+  const nm = r => { const f = LEVELS.find(l => r.bed >= l[2] && r.bed <= l[3]); const fl = f ? f[0] : "B?"; return CLOUD.hidden(r.handle) ? `Survivor ${fl}` : "@" + esc(r.handle); };
+  const draw2 = async () => {
+    const kinds = [["coins", "Coins"], ["floors", "Floors"], ...GAMES.map(g => ["g:" + g.id, g.n])], periods = [["today", "Today"], ["week", "This week"], ["all", "All time"]];
+    ov.innerHTML = `<div class="bh"><b>LEADERBOARDS</b><button class="mini" id="bx" type="button">Done</button></div>
+    <div class="bt">${kinds.map(k => `<button class="mini${(k[0] === kind || k[0] === "g:" + game && kind === "game") ? " go" : ""}" data-k="${k[0]}" type="button">${esc(k[1])}</button>`).join("")}</div>
+    <div class="bt">${periods.map(k => `<button class="mini${k[0] === period ? " go" : ""}" data-p="${k[0]}" type="button">${k[1]}</button>`).join("")}</div>
+    <div id="bl"><p>Loading...</p></div>`;
+    $("bx").onclick = () => { ov.remove(); document.body.classList.remove("gameopen"); };
+    ov.onclick = e => { const k = e.target.closest("[data-k]"), p = e.target.closest("[data-p]"); if (k) { const v = k.dataset.k; if (v.startsWith("g:")) { kind = "game"; game = v.slice(2); } else kind = v; draw2(); } if (p) { period = p.dataset.p; draw2(); } };
+    try {
+      const r = await CLOUD.board(kind, period, kind === "game" ? game : ""), box = $("bl");
+      if (!r.rows.length) { box.innerHTML = `<p>No scores yet. Save to the cloud, play a game, and be the first.</p>`; return; }
+      box.innerHTML = `<ol class="rank">${r.rows.map(x => kind === "floors"
+        ? `<li><span>${esc(LEVELS[x.floor - 1][0])} · ${esc(LEVELS[x.floor - 1][1])}</span><b>${fmt(x.v)}</b></li>`
+        : `<li${x.handle === handle ? ` class="me"` : ""}><span>${nm(x)} <em>bed ${fmt(x.bed)}</em></span><b>${fmt(x.v)}</b></li>`).join("")}</ol>`;
+    } catch (e) { $("bl").innerHTML = `<p>Couldn't reach the bunker. Try again in a minute.</p>`; }
+  };
+  draw2();
 };
 function games() {
   $("pgrid").innerHTML = GAMES.map(g => `<button class="gm" data-g="${g.id}" type="button" style="--c:${g.col}"><b>${g.n}</b><span>${g.d}</span><em>${st.best[g.id] ? "Best: " + st.best[g.id] + " coins" : "Not played yet"}</em></button>`).join("");
@@ -325,6 +394,7 @@ function play(id) {
   stop = gm.start({ svg, hud: t => $("ghud").textContent = t, bar: p => $("gflood").style.width = Math.min(100, p) + "%",
     end: (coins, line) => {
       coins = Math.max(0, Math.round(coins)); st.coins += coins; st.earned += coins; coinsVisit += coins; const best = coins > (st.best[id] || 0); if (best) st.best[id] = coins; save(); draw(); games();
+      if (code && CLOUD && coins > 0) CLOUD.score(id, coins, (Date.now() - gT0) / 1000).catch(() => {});
       ev("game-" + id + "-secs-" + gb((Date.now() - gT0) / 1000)); gId = null;
       ev("game-" + id + "-" + (coins < 10 ? "0-9" : coins < 20 ? "10-19" : coins < 40 ? "20-39" : coins < 70 ? "40-69" : "70plus"));
       $("gmsg").innerHTML = `<b>+${coins} COINS</b>${esc(line)}${best && coins ? " New best." : ""}<div class="row"><button class="btn" id="gx" type="button">Back to my room</button><button class="btn go" id="gy" type="button">Again</button></div>`;
