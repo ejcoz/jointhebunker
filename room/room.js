@@ -27,6 +27,8 @@ window.addEventListener("hashchange", () => location.reload());
 const app = $("app");
 // ---------- cloud save: a recovery code is the only key (no accounts) ----------
 const CLOUD = window.BK_CLOUD;
+// preview switch: the cloud boxes only show with &cloud=1 in the link (remembered on this device) until we turn them on for everyone
+const CLOUD_ON = (() => { try { if (qs.get("cloud") === "1") localStorage.setItem("bunkerCloud", "1"); if (qs.get("cloud") === "0") localStorage.removeItem("bunkerCloud"); return !!localStorage.getItem("bunkerCloud") || window.BK_CLOUD_PUBLIC === true; } catch (e) { return window.BK_CLOUD_PUBLIC === true; } })();
 const normCode = c => { const t = String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^BUNK/, ""); return t.length === 12 ? "BUNK-" + t.slice(0, 4) + "-" + t.slice(4, 8) + "-" + t.slice(8) : ""; };
 const restoreWith = async raw => {
   const c = normCode(raw); if (!c) throw new Error("That code doesn't look right.");
@@ -44,7 +46,7 @@ if (!handle || !L) {
   app.innerHTML = `<div class="lock"><div class="k">JOIN THE BUNKER</div><h1>OPEN <b>YOUR ROOM</b></h1><p>Type your Instagram username. We'll find your bed and take you inside.</p>
   <form id="go" class="goform"><span>@</span><input id="gu" autocapitalize="none" spellcheck="false" placeholder="yourname" maxlength="40"><button class="btn go" type="submit">Go</button></form>
   <p class="fine">Not on the manifest yet? Follow @jointhebunker. Doors unlock after every Transmission.</p>
-  <p class="fine"><a href="#" id="rcLink">Have a recovery code?</a></p><form id="rcForm" class="goform" hidden><input id="rcIn" autocapitalize="characters" spellcheck="false" placeholder="BUNK-XXXX-XXXX-XXXX" maxlength="24"><button class="btn go" type="submit">Restore</button></form><p class="fine" id="rcMsg"></p></div>`;
+  <p class="fine"${CLOUD_ON ? "" : " hidden"}><a href="#" id="rcLink">Have a recovery code?</a></p><form id="rcForm" class="goform" hidden><input id="rcIn" autocapitalize="characters" spellcheck="false" placeholder="BUNK-XXXX-XXXX-XXXX" maxlength="24"><button class="btn go" type="submit">Restore</button></form><p class="fine" id="rcMsg"></p></div>`;
   $("rcLink").onclick = e => { e.preventDefault(); $("rcForm").hidden = false; $("rcIn").focus(); };
   $("rcForm").onsubmit = async e => { e.preventDefault(); $("rcMsg").textContent = "Looking..."; try { await restoreWith($("rcIn").value); } catch (err) { $("rcMsg").textContent = restoreMsg(err); } };
   $("go").onsubmit = e => { e.preventDefault(); const u = $("gu").value.trim().replace(/^@+/, ""); if (u) location.href = "/?u=" + encodeURIComponent(u) + "&go=room"; };
@@ -236,9 +238,9 @@ ${pet ? mate : PETASK}
 <p>${petLine} ${JOB[lvl]}</p>
 <div class="hint" id="hint"><b>How it works</b><ol><li><b>Play</b> a game to earn coins.</li><li>Open the <b>Catalogue</b> and tap anything to try it on.</li><li>Buy it. It stays in your room.</li></ol><button id="hintX" type="button" aria-label="Got it">Got it</button></div>
 <div class="savebox"><b>KEEP YOUR ROOM SAFE</b><p>Your room lives in this browser. Save your room link and it comes back anywhere: Safari, Chrome, a new phone.</p><button class="mini go" id="saveBtn" type="button">Save my room</button><div id="saveOut" hidden><input id="saveLink" readonly><p id="saveMsg"></p></div></div>
-<div class="savebox" id="cloud"><b>SAVE TO THE CLOUD</b><p id="cloudP"></p><div id="cloudRow"></div><div id="cloudOut" hidden></div>
+<div class="savebox" id="cloud"${CLOUD_ON ? "" : " hidden"}><b>SAVE TO THE CLOUD</b><p id="cloudP"></p><div id="cloudRow"></div><div id="cloudOut" hidden></div>
 <form id="rcForm2" class="rcf"><input id="rcIn2" autocapitalize="characters" spellcheck="false" placeholder="Have a code? BUNK-XXXX-XXXX-XXXX" maxlength="24"><button class="mini" type="submit">Restore</button></form><p id="rcMsg2"></p></div>
-<div class="savebox"><b>LEADERBOARDS</b><p>Top scores in every game, the most coins earned, and floor against floor.</p><button class="mini go" id="boardBtn" type="button">Open leaderboards</button></div>
+<div class="savebox"${CLOUD_ON ? "" : " hidden"}><b>LEADERBOARDS</b><p>Top scores in every game, the most coins earned, and floor against floor.</p><button class="mini go" id="boardBtn" type="button">Open leaderboards</button></div>
 <p class="fine">Coins are earned, never bought.</p>`;
 if (pending) {
   const bar = document.createElement("div"); bar.className = "restore";
